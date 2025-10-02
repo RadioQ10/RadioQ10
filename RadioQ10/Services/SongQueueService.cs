@@ -1,26 +1,31 @@
+using Microsoft.EntityFrameworkCore;
 using RadioQ10.Models;
+using RadioQ10.Data;
 
 namespace RadioQ10.Services;
 
 public sealed class SongQueueService : ISongQueueService
 {
-    private readonly List<SongQueueItem> _queue = new();
-    private readonly object _syncRoot = new();
+    private readonly IRadioDbContext _dbContext;
+
+    public SongQueueService(IRadioDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
 
     public IReadOnlyCollection<SongQueueItem> GetAll()
     {
-        lock (_syncRoot)
-        {
-            return _queue.ToArray();
-        }
+        return _dbContext.SongQueue
+            .AsNoTracking()
+            .OrderBy(item => item.EnqueuedAt)
+            .ToList();
     }
 
     public SongQueueItem? Get(Guid id)
     {
-        lock (_syncRoot)
-        {
-            return _queue.FirstOrDefault(item => item.Id == id);
-        }
+        return _dbContext.SongQueue
+            .AsNoTracking()
+            .FirstOrDefault(item => item.Id == id);
     }
 
     public SongQueueItem Enqueue(string videoId, string title, string? channelTitle, string? thumbnailUrl, string? requestedBy)
@@ -36,27 +41,23 @@ public sealed class SongQueueService : ISongQueueService
             EnqueuedAt = DateTimeOffset.UtcNow
         };
 
-        lock (_syncRoot)
-        {
-            _queue.Add(item);
-        }
+        _dbContext.SongQueue.Add(item);
+        _dbContext.SaveChanges();
 
         return item;
     }
 
     public bool Remove(Guid id)
     {
-        lock (_syncRoot)
+        var entity = _dbContext.SongQueue.FirstOrDefault(item => item.Id == id);
+        if (entity is null)
         {
-            var index = _queue.FindIndex(item => item.Id == id);
-            if (index < 0)
-            {
-                return false;
-            }
-
-            _queue.RemoveAt(index);
-            return true;
+            return false;
         }
+
+        _dbContext.SongQueue.Remove(entity);
+        _dbContext.SaveChanges();
+        return true;
     }
 }
 
