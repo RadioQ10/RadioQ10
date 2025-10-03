@@ -133,6 +133,29 @@
     connection.start().catch(err => console.error(err.toString()));
 
     // Recibe eventos del hub
+    connection.on("SyncState", (id1, startTimestamp, percent, isPlaying) => {
+      // Sincroniza el estado global al conectar
+      isSyncing = true;
+      playerReady = false;
+      playerA.loadVideoById({videoId: id1, startSeconds: 0});
+      document.getElementById('vid1').value = id1;
+      // Espera a que el video esté listo y lo posiciona
+      const syncToState = () => {
+        if (!playerA || typeof playerA.seekTo !== 'function') {
+          setTimeout(syncToState, 200);
+          return;
+        }
+        setPercent(percent).then(() => {
+          if (isPlaying) {
+            playerA.playVideo();
+          } else {
+            playerA.pauseVideo();
+          }
+          isSyncing = false;
+        });
+      };
+      setTimeout(syncToState, 500);
+    });
     connection.on("Play", () => {
       isSyncing = true;
       playerA && playerA.playVideo();
@@ -332,8 +355,13 @@
   <div class="fixed bottom-0 left-0 z-50 w-full px-0 py-4 bg-white border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700">
     <div class="flex flex-col items-center justify-center w-full">
       <div class="flex items-center justify-center gap-6 mb-2">
-        <button id="barPauseBtn" class="flex items-center justify-center w-10 h-10 bg-blue-600 rounded-full hover:bg-blue-700 focus:outline-none">
+        <button id="barPlayBtn" class="flex items-center justify-center w-10 h-10 bg-blue-600 rounded-full hover:bg-blue-700 focus:outline-none">
           <svg class="w-5 h-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 10 16">
+            <polygon points="0,0 10,8 0,16" />
+          </svg>
+        </button>
+        <button id="barPauseBtn" class="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-full hover:bg-gray-200 focus:outline-none">
+          <svg class="w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 10 16">
             <path fill-rule="evenodd" d="M0 .8C0 .358.32 0 .714 0h1.429c.394 0 .714.358.714.8v14.4c0 .442-.32.8-.714.8H.714a.678.678 0 0 1-.505-.234A.851.851 0 0 1 0 15.2V.8Zm7.143 0c0-.442.32-.8.714-.8h1.429c.19 0 .37.084.505.234.134.15.209.354.209.566v14.4c0 .442-.32.8-.714.8H7.857c-.394 0-.714-.358-.714-.8V.8Z" clip-rule="evenodd"/>
           </svg>
         </button>
@@ -363,6 +391,9 @@
     document.getElementById('barPauseBtn').addEventListener('click', () => {
       // notify server; server will broadcast Pause
       connection.invoke("Pause");
+    });
+    document.getElementById('barPlayBtn').addEventListener('click', () => {
+      connection.invoke("Play");
     });
     document.getElementById('barRestartBtn').addEventListener('click', () => {
       // request server to seek to 0 and then play
