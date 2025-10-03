@@ -145,8 +145,9 @@
     });
     connection.on("SeekPercent", (percent) => {
       isSyncing = true;
+      isRemoteSeek = true;
       setPercent(percent);
-      setTimeout(() => { isSyncing = false; }, 300);
+      setTimeout(() => { isSyncing = false; isRemoteSeek = false; }, 300);
     });
     connection.on("LoadVideos", (id1, startTimestamp) => {
       isSyncing = true;
@@ -181,7 +182,8 @@
         height: '360',
         width: '640',
         videoId: '', // se establece al cargar
-        playerVars: { rel: 0, playsinline: 1, controls: 1 },
+        // hide native controls so UI controls are the single source of actions
+        playerVars: { rel: 0, playsinline: 1, controls: 0 },
         events: {
           'onReady': () => {
             playerReady = true;
@@ -272,13 +274,12 @@
       });
     }
 
-    // --- Controles play/pause globales ---
+    // --- Controles play/pause globales: ahora solo notifican al hub ---
     document.getElementById('playBtn').addEventListener('click', () => {
-      playerA && playerA.playVideo();
+      // send intent to server, server will broadcast Play to everyone
       connection.invoke("Play");
     });
     document.getElementById('pauseBtn').addEventListener('click', () => {
-      playerA && playerA.pauseVideo();
       connection.invoke("Pause");
     });
 
@@ -357,18 +358,16 @@
   <script>
     // --- Barra inferior: pausa, seek y rediseño ---
     let isBarDragging = false;
+    let isRemoteSeek = false;
+
     document.getElementById('barPauseBtn').addEventListener('click', () => {
-      playerA && playerA.pauseVideo();
+      // notify server; server will broadcast Pause
       connection.invoke("Pause");
     });
     document.getElementById('barRestartBtn').addEventListener('click', () => {
-      if (playerA) {
-        isSyncing = true;
-        playerA.seekTo(0, true);
-        playerA.playVideo();
-        connection.invoke("SeekPercent", 0);
-        setTimeout(() => { isSyncing = false; }, 300);
-      }
+      // request server to seek to 0 and then play
+      connection.invoke("SeekPercent", 0);
+      setTimeout(() => connection.invoke("Play"), 150);
     });
     document.getElementById('barNextBtn').addEventListener('click', () => {
       // Puedes implementar lógica de siguiente video aquí
@@ -381,7 +380,7 @@
     }
     function updateBarProgress() {
       if (!playerA) return;
-      if (!isBarDragging) {
+      if (!isBarDragging && !isRemoteSeek) {
         const current = safeGetCurrentTime(playerA);
         const duration = safeGetDuration(playerA);
         document.getElementById('barCurrentTime').textContent = formatTime(current);
@@ -396,22 +395,21 @@
     barProgress.addEventListener('touchstart', () => { isBarDragging = true; });
     barProgress.addEventListener('mouseup', (e) => {
       isBarDragging = false;
+      isRemoteSeek = false;
       const val = Number(e.target.value);
-      if (!isNaN(val) && playerA) {
-        isSyncing = true;
-        playerA.seekTo(val, true);
-        connection.invoke("SeekPercent", Math.round((val / safeGetDuration(playerA)) * 100));
-        setTimeout(() => { isSyncing = false; }, 300);
+      if (!isNaN(val)) {
+        // only notify server — do not perform local seek here
+        const percent = Math.round((val / (safeGetDuration(playerA) || 1)) * 100);
+        connection.invoke("SeekPercent", percent);
       }
     });
     barProgress.addEventListener('touchend', (e) => {
       isBarDragging = false;
+      isRemoteSeek = false;
       const val = Number(e.target.value);
-      if (!isNaN(val) && playerA) {
-        isSyncing = true;
-        playerA.seekTo(val, true);
-        connection.invoke("SeekPercent", Math.round((val / safeGetDuration(playerA)) * 100));
-        setTimeout(() => { isSyncing = false; }, 300);
+      if (!isNaN(val)) {
+        const percent = Math.round((val / (safeGetDuration(playerA) || 1)) * 100);
+        connection.invoke("SeekPercent", percent);
       }
     });
     barProgress.addEventListener('input', (e) => {
@@ -419,6 +417,14 @@
         const val = Number(e.target.value);
         document.getElementById('barCurrentTime').textContent = formatTime(val);
       }
+    });
+
+    // --- Recibe eventos del hub ---
+    connection.on("SeekPercent", (percent) => {
+      isSyncing = true;
+      isRemoteSeek = true;
+      setPercent(percent);
+      setTimeout(() => { isSyncing = false; isRemoteSeek = false; }, 300);
     });
   </script>
 </div>

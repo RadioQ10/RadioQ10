@@ -6,17 +6,17 @@ public sealed class RadioHub : Hub
 {
     public async Task Play()
     {
-        await Clients.Others.SendAsync("Play");
+        await Clients.All.SendAsync("Play");
     }
 
     public async Task Pause()
     {
-        await Clients.Others.SendAsync("Pause");
+        await Clients.All.SendAsync("Pause");
     }
 
     public async Task SeekPercent(int percent)
     {
-        await Clients.Others.SendAsync("SeekPercent", percent);
+        await Clients.All.SendAsync("SeekPercent", percent);
     }
 
     public async Task LoadVideos(string id1, long startTimestamp)
