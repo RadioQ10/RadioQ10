@@ -122,6 +122,7 @@
     let playerA;
     let isSyncing = false; // evita loops de eventos
     let playerReady = false;
+    let pendingSync = null;
 
     // --- SignalR ---
     const connection = new signalR.HubConnectionBuilder()
@@ -152,15 +153,27 @@
       playerReady = false;
       playerA.loadVideoById({videoId: id1, startSeconds: 0});
       document.getElementById('vid1').value = id1;
+      // Guarda la sincronización pendiente
+      pendingSync = { id1, startTimestamp };
+      tryStartSync();
+    });
+
+    function tryStartSync() {
+      if (!pendingSync) return;
+      if (!playerA || typeof playerA.playVideo !== 'function') {
+        setTimeout(tryStartSync, 200);
+        return;
+      }
       // Espera a la hora exacta para iniciar el video
       const now = Date.now();
-      const waitMs = Math.max(0, startTimestamp - now);
+      const waitMs = Math.max(0, pendingSync.startTimestamp - now);
       setTimeout(() => {
         playerA.seekTo(0, true);
         playerA.playVideo();
         isSyncing = false;
+        pendingSync = null;
       }, waitMs);
-    });
+    }
 
     // Se llama automáticamente cuando la API está lista
     window.onYouTubeIframeAPIReady = function () {
@@ -170,7 +183,10 @@
         videoId: '', // se establece al cargar
         playerVars: { rel: 0, playsinline: 1, controls: 1 },
         events: {
-          'onReady': () => { playerReady = true; },
+          'onReady': () => {
+            playerReady = true;
+            tryStartSync(); // Intenta iniciar la sincronización si hay una pendiente
+          },
           'onStateChange': onStateChangeA
         }
       });
