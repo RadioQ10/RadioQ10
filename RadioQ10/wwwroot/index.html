@@ -147,22 +147,19 @@
       setPercent(percent);
       setTimeout(() => { isSyncing = false; }, 300);
     });
-    connection.on("LoadVideos", (id1, time) => {
+    connection.on("LoadVideos", (id1, startTimestamp) => {
       isSyncing = true;
       playerReady = false;
-      playerA.loadVideoById({videoId: id1, startSeconds: time || 0});
+      playerA.loadVideoById({videoId: id1, startSeconds: 0});
       document.getElementById('vid1').value = id1;
-      // Espera a que el video esté listo y lo reproduce automáticamente
-      const tryPlay = () => {
-        if (playerA && typeof playerA.playVideo === 'function') {
-          playerA.seekTo(time || 0, true);
-          playerA.playVideo();
-        } else {
-          setTimeout(tryPlay, 200);
-        }
-      };
-      setTimeout(tryPlay, 500);
-      setTimeout(() => { isSyncing = false; }, 800);
+      // Espera a la hora exacta para iniciar el video
+      const now = Date.now();
+      const waitMs = Math.max(0, startTimestamp - now);
+      setTimeout(() => {
+        playerA.seekTo(0, true);
+        playerA.playVideo();
+        isSyncing = false;
+      }, waitMs);
     });
 
     // Se llama automáticamente cuando la API está lista
@@ -217,9 +214,9 @@
         alert('Pega el videoId y vuelve a intentar.');
         return;
       }
-      // Siempre inicia en el segundo 2
-      const startTime = 2;
-      connection.invoke("LoadVideos", id1, startTime);
+      // Define hora de inicio absoluta (ahora + 3 segundos)
+      const startTimestamp = Date.now() + 3000;
+      connection.invoke("LoadVideos", id1, startTimestamp);
     });
 
     // --- Buscador de videos de YouTube ---
@@ -252,8 +249,8 @@
         div.onclick = () => {
           document.getElementById('vid1').value = video.id;
           // Sincroniza el video seleccionado en todos los clientes
-          const startTime = 2;
-          connection.invoke("LoadVideos", video.id, startTime);
+          const startTimestamp = Date.now() + 3000;
+          connection.invoke("LoadVideos", video.id, startTimestamp);
         };
         container.appendChild(div);
       });

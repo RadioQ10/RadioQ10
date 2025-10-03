@@ -19,9 +19,9 @@ public sealed class RadioHub : Hub
         await Clients.Others.SendAsync("SeekPercent", percent);
     }
 
-    public async Task LoadVideos(string id1, double time)
+    public async Task LoadVideos(string id1, long startTimestamp)
     {
-        await Clients.All.SendAsync("LoadVideos", id1, time);
+        await Clients.All.SendAsync("LoadVideos", id1, startTimestamp);
     }
 
     public Task JoinRoom(string room)
