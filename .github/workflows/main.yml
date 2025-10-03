@@ -5,7 +5,7 @@ on:
     workflows: ["Run CSX"]
     types:
       - completed
-    branches: ["main"]
+    branches: ["master"]
 
 env:
   PROJECT_PATH: "RadioQ10/RadioQ10.csproj"
