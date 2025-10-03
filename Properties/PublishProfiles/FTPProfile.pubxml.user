@@ -1,0 +1,73 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- https://go.microsoft.com/fwlink/?LinkID=208121. -->
+<Project>
+  <PropertyGroup>
+    <TimeStampOfAssociatedLegacyPublishXmlFile />
+    <EncryptedPassword>AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAAm4BajrrG+EqlmcmaqOIrXQAAAAACAAAAAAAQZgAAAAEAACAAAAAVqEjLBu4vyHR6HUMOY+FPqtfST3Jojl68HmQiy1qNwwAAAAAOgAAAAAIAACAAAACUZF+nZlYB1KOyo5xemDK04UDEwPG4VkM5py+e0N/U4iAAAABn19thNkloz2NpmAF8vnLzVZqPWo078mleP74twa+/q0AAAACuTSSg8XBoIE5DD4V7obsOUkKdq4ASNZMG1NS4a8ipxJxKz5TCZctBWcgE2gvxC9HjZEu/6Wwcqgifkm/WNLc5</EncryptedPassword>
+    <_PublishTargetUrl>ftp://173.208.162.73/radioq10</_PublishTargetUrl>
+    <History>True|2025-10-03T15:56:35.0073945Z||;False|2025-10-03T10:55:46.9632605-05:00||;True|2025-10-03T10:47:37.9349683-05:00||;False|2025-10-03T10:46:49.6659009-05:00||;True|2025-10-03T10:38:05.1792048-05:00||;False|2025-10-03T10:37:21.3369237-05:00||;True|2025-10-03T10:24:48.2261024-05:00||;False|2025-10-03T10:23:53.4418165-05:00||;True|2025-10-03T10:18:09.2854692-05:00||;False|2025-10-03T10:17:26.9279871-05:00||;True|2025-10-03T10:14:29.1163634-05:00||;False|2025-10-03T10:13:37.2813748-05:00||;True|2025-10-03T10:10:21.0383912-05:00||;False|2025-10-03T10:09:36.8332356-05:00||;True|2025-10-03T10:08:02.7161010-05:00||;False|2025-10-03T10:07:16.6961378-05:00||;True|2025-10-03T10:03:46.9531611-05:00||;False|2025-10-03T10:02:56.8808747-05:00||;True|2025-10-03T09:57:14.2361702-05:00||;</History>
+    <LastFailureDetails />
+  </PropertyGroup>
+  <ItemGroup>
+    <File Include="appsettings.json">
+      <publishTime>10/03/2025 09:33:38</publishTime>
+    </File>
+    <File Include="Microsoft.EntityFrameworkCore.Abstractions.dll">
+      <publishTime>09/24/2024 04:54:48</publishTime>
+    </File>
+    <File Include="Microsoft.EntityFrameworkCore.dll">
+      <publishTime>09/24/2024 04:55:26</publishTime>
+    </File>
+    <File Include="Microsoft.EntityFrameworkCore.Relational.dll">
+      <publishTime>09/24/2024 04:55:48</publishTime>
+    </File>
+    <File Include="Microsoft.OpenApi.dll">
+      <publishTime>08/22/2025 14:09:40</publishTime>
+    </File>
+    <File Include="Npgsql.dll">
+      <publishTime>10/13/2024 13:18:52</publishTime>
+    </File>
+    <File Include="Npgsql.EntityFrameworkCore.PostgreSQL.dll">
+      <publishTime>10/13/2024 14:28:44</publishTime>
+    </File>
+    <File Include="RadioQ10.deps.json">
+      <publishTime>10/03/2025 10:46:59</publishTime>
+    </File>
+    <File Include="RadioQ10.dll">
+      <publishTime>10/03/2025 10:46:59</publishTime>
+    </File>
+    <File Include="RadioQ10.exe">
+      <publishTime>10/03/2025 10:46:59</publishTime>
+    </File>
+    <File Include="RadioQ10.pdb">
+      <publishTime>10/03/2025 10:46:59</publishTime>
+    </File>
+    <File Include="RadioQ10.runtimeconfig.json">
+      <publishTime>10/03/2025 09:56:33</publishTime>
+    </File>
+    <File Include="RadioQ10.staticwebassets.endpoints.json">
+      <publishTime>10/03/2025 10:46:41</publishTime>
+    </File>
+    <File Include="Swashbuckle.AspNetCore.Swagger.dll">
+      <publishTime>09/29/2025 03:57:30</publishTime>
+    </File>
+    <File Include="Swashbuckle.AspNetCore.SwaggerGen.dll">
+      <publishTime>09/29/2025 03:57:48</publishTime>
+    </File>
+    <File Include="Swashbuckle.AspNetCore.SwaggerUI.dll">
+      <publishTime>09/29/2025 03:57:40</publishTime>
+    </File>
+    <File Include="web.config">
+      <publishTime>10/03/2025 10:46:59</publishTime>
+    </File>
+    <File Include="wwwroot/index.html">
+      <publishTime>10/03/2025 10:46:13</publishTime>
+    </File>
+    <File Include="wwwroot/index.html.br">
+      <publishTime>10/03/2025 10:46:41</publishTime>
+    </File>
+    <File Include="wwwroot/index.html.gz">
+      <publishTime>10/03/2025 10:46:41</publishTime>
+    </File>
+  </ItemGroup>
+</Project>

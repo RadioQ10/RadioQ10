@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <title>Reproductor YouTube sincronizado (1 video)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        :root {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        }
+
+        body {
+            margin: 24px;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        input[type="text"] {
+            padding: 8px 10px;
+            min-width: 260px;
+        }
+
+        button {
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+
+        #player1 {
+            aspect-ratio: 16/9;
+            width: 100%;
+        }
+
+        .small {
+            opacity: .8;
+            font-size: .9rem;
+        }
+
+        .stack {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        #searchResults {
+            margin-top: 16px;
+        }
+
+        .video-result {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+
+            .video-result:hover {
+                background: #f5f5f5;
+            }
+
+        .video-thumb {
+            width: 120px;
+            height: 68px;
+            object-fit: cover;
+        }
+
+        .video-title {
+            font-size: 1rem;
+            font-weight: 500;
+        }
+    </style>
+    <!-- SignalR client -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+  <h1>Video de YouTube sincronizado</h1>
+
+  <div class="controls">
+    <div class="stack">
+      <label>Video (videoId):</label>
+      <input id="vid1" type="text" placeholder="p. ej. dQw4w9WgXcQ" />
+    </div>
+    <button id="loadBtn">Cargar</button>
+    <button id="playBtn">Play</button>
+    <button id="pauseBtn">Pause</button>
+    <div class="stack">
+      <label for="percent">Ir a %:</label>
+      <input id="percent" type="number" min="1" max="100" value="50" style="width:80px" />
+      <button id="seekPercentBtn">Ir</button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="stack">
+      <input id="searchQuery" type="text" placeholder="Buscar en YouTube..." />
+      <button id="searchBtn">Buscar</button>
+    </div>
+  </div>
+  <div id="searchResults"></div>
+
+  <div id="player1"></div>
+
+  <p class="small">
+    Tips: busca videos, selecciona uno o pega el ID y pulsa <b>Cargar</b>. Usa el campo “Ir a %” o llama <code>setPercent(75)</code> desde la consola.
+  </p>
+
+  <!-- Carga de la IFrame API -->
+  <script>
+    (function loadYT() {
+      const tag = document.createElement('script');
+      tag.src = "https://www.youtube.com/iframe_api";
+      document.head.appendChild(tag);
+    })();
+
+    let playerA;
+    let isSyncing = false; // evita loops de eventos
+    let playerReady = false;
+
+    // --- SignalR ---
+    const connection = new signalR.HubConnectionBuilder()
+      .withUrl("/radioHub")
+      .withAutomaticReconnect()
+      .build();
+
+    connection.start().catch(err => console.error(err.toString()));
+
+    // Recibe eventos del hub
+    connection.on("Play", () => {
+      isSyncing = true;
+      playerA && playerA.playVideo();
+      setTimeout(() => { isSyncing = false; }, 300);
+    });
+    connection.on("Pause", () => {
+      isSyncing = true;
+      playerA && playerA.pauseVideo();
+      setTimeout(() => { isSyncing = false; }, 300);
+    });
+    connection.on("SeekPercent", (percent) => {
+      isSyncing = true;
+      setPercent(percent);
+      setTimeout(() => { isSyncing = false; }, 300);
+    });
+    connection.on("LoadVideos", (id1, time) => {
+      isSyncing = true;
+      playerReady = false;
+      playerA.loadVideoById({videoId: id1, startSeconds: time || 0});
+      document.getElementById('vid1').value = id1;
+      // Espera a que el video esté listo y lo reproduce automáticamente
+      const tryPlay = () => {
+        if (playerA && typeof playerA.playVideo === 'function') {
+          playerA.seekTo(time || 0, true);
+          playerA.playVideo();
+        } else {
+          setTimeout(tryPlay, 200);
+        }
+      };
+      setTimeout(tryPlay, 500);
+      setTimeout(() => { isSyncing = false; }, 800);
+    });
+
+    // Se llama automáticamente cuando la API está lista
+    window.onYouTubeIframeAPIReady = function () {
+      playerA = new YT.Player('player1', {
+        height: '360',
+        width: '640',
+        videoId: '', // se establece al cargar
+        playerVars: { rel: 0, playsinline: 1, controls: 1 },
+        events: {
+          'onReady': () => { playerReady = true; },
+          'onStateChange': onStateChangeA
+        }
+      });
+    };
+
+    // --- Sincronización básica local + global ---
+    function onStateChangeA(e) {
+      if (isSyncing) return;
+      handleGlobalSync(e, playerA);
+    }
+
+    // Envía eventos al hub si la acción fue local
+    function handleGlobalSync(e, player) {
+      if (isSyncing) return;
+      if (e.data === YT.PlayerState.PLAYING) {
+        connection.invoke("Play");
+      } else if (e.data === YT.PlayerState.PAUSED) {
+        connection.invoke("Pause");
+      } else if (e.data === YT.PlayerState.BUFFERING) {
+        // Detecta seek manual
+        const percent = Math.round((safeGetCurrentTime(player) / safeGetDuration(player)) * 100);
+        if (percent > 0 && percent <= 100) {
+          connection.invoke("SeekPercent", percent);
+        }
+      }
+    }
+
+    function safeGetCurrentTime(p) {
+      try { return typeof p.getCurrentTime === 'function' ? p.getCurrentTime() : 0; }
+      catch { return 0; }
+    }
+    function safeGetDuration(p) {
+      try { return typeof p.getDuration === 'function' ? p.getDuration() : 0; }
+      catch { return 0; }
+    }
+
+    // --- Cargar video por ID (desde input) ---
+    document.getElementById('loadBtn').addEventListener('click', () => {
+      const id1 = (document.getElementById('vid1').value || '').trim();
+      if (!id1) {
+        alert('Pega el videoId y vuelve a intentar.');
+        return;
+      }
+      // Siempre inicia en el segundo 2
+      const startTime = 2;
+      connection.invoke("LoadVideos", id1, startTime);
+    });
+
+    // --- Buscador de videos de YouTube ---
+      const API_KEY = 'AIzaSyCeSDqbhZ2ozXjfmgdKHfW5wCFbBaibMr0'; // <-- PON TU API KEY DE YOUTUBE
+    document.getElementById('searchBtn').addEventListener('click', async () => {
+      const query = document.getElementById('searchQuery').value.trim();
+      if (!query) return;
+      const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=8&q=${encodeURIComponent(query)}&key=${API_KEY}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const results = (data.items || []).map(item => ({
+        id: item.id.videoId,
+        title: item.snippet.title,
+        thumb: item.snippet.thumbnails.default.url
+      }));
+      renderSearchResults(results);
+    });
+
+    function renderSearchResults(results) {
+      const container = document.getElementById('searchResults');
+      container.innerHTML = '';
+      if (!results.length) {
+        container.innerHTML = '<div>No se encontraron videos.</div>';
+        return;
+      }
+      results.forEach(video => {
+        const div = document.createElement('div');
+        div.className = 'video-result';
+        div.innerHTML = `<img class="video-thumb" src="${video.thumb}" alt="thumb"><span class="video-title">${video.title}</span>`;
+        div.onclick = () => {
+          document.getElementById('vid1').value = video.id;
+          // Sincroniza el video seleccionado en todos los clientes
+          const startTime = 2;
+          connection.invoke("LoadVideos", video.id, startTime);
+        };
+        container.appendChild(div);
+      });
+    }
+
+    // --- Controles play/pause globales ---
+    document.getElementById('playBtn').addEventListener('click', () => {
+      playerA && playerA.playVideo();
+      connection.invoke("Play");
+    });
+    document.getElementById('pauseBtn').addEventListener('click', () => {
+      playerA && playerA.pauseVideo();
+      connection.invoke("Pause");
+    });
+
+    // --- Método público: ir al porcentaje (1-100) ---
+    async function setPercent(p) {
+      // clamp
+      p = Math.max(1, Math.min(100, Number(p) || 0));
+      await ensureMetadata(playerA);
+
+      const durA = safeGetDuration(playerA);
+      if (!durA) return;
+
+      const tA = (p / 100) * durA;
+
+      isSyncing = true;
+      try {
+        playerA.seekTo(tA, true);
+      } finally {
+        setTimeout(() => { isSyncing = false; }, 0);
+      }
+    }
+    window.setPercent = setPercent;
+
+    // botón de UI para porcentaje
+    document.getElementById('seekPercentBtn').addEventListener('click', () => {
+      const val = document.getElementById('percent').value;
+      setPercent(val);
+      connection.invoke("SeekPercent", val);
+    });
+
+    // Espera a que getDuration() sea confiable
+    function ensureMetadata(player) {
+      return new Promise(resolve => {
+        let tries = 0;
+        const maxTries = 50; // ~5s
+        const timer = setInterval(() => {
+          const d = safeGetDuration(player);
+          if (d && Number.isFinite(d) && d > 0) {
+            clearInterval(timer);
+            resolve();
+          } else if (++tries >= maxTries) {
+            clearInterval(timer);
+            resolve(); // seguimos aunque no haya duración
+          }
+        }, 100);
+      });
+    }
+  </script>
+
+  <div class="fixed bottom-0 left-0 z-50 w-full px-0 py-4 bg-white border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+    <div class="flex flex-col items-center justify-center w-full">
+      <div class="flex items-center justify-center gap-6 mb-2">
+        <button id="barPauseBtn" class="flex items-center justify-center w-10 h-10 bg-blue-600 rounded-full hover:bg-blue-700 focus:outline-none">
+          <svg class="w-5 h-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 10 16">
+            <path fill-rule="evenodd" d="M0 .8C0 .358.32 0 .714 0h1.429c.394 0 .714.358.714.8v14.4c0 .442-.32.8-.714.8H.714a.678.678 0 0 1-.505-.234A.851.851 0 0 1 0 15.2V.8Zm7.143 0c0-.442.32-.8.714-.8h1.429c.19 0 .37.084.505.234.134.15.209.354.209.566v14.4c0 .442-.32.8-.714.8H7.857c-.394 0-.714-.358-.714-.8V.8Z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+        <button id="barNextBtn" class="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-full hover:bg-gray-200 focus:outline-none">
+          <svg class="w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 12 16">
+            <path d="M11 0a1 1 0 0 0-1 1v5.7a2.028 2.028 0 0 0-.177-.194L3.33.732A2 2 0 0 0 0 2.227v11.546A1.977 1.977 0 0 0 1.181 15.6a1.982 1.982 0 0 0 2.147-.33l6.5-5.773A1.88 1.88 0 0 0 10 9.3V15a1 1 0 1 0 2 0V1a1 1 0 0 0-1-1Z"/>
+          </svg>
+        </button>
+        <button id="barRestartBtn" class="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-full hover:bg-gray-200 focus:outline-none">
+          <svg class="w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 20">
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 1v5h-5M2 19v-5h5m10-4a8 8 0 0 1-14.947 3.97M1 10a8 8 0 0 1 14.947-3.97"/>
+          </svg>
+        </button>
+      </div>
+      <div class="flex items-center w-full max-w-xl px-4">
+        <span id="barCurrentTime" class="text-sm text-gray-500 w-12 text-center">0:00</span>
+        <input id="barProgress" type="range" min="0" max="100" value="0" class="flex-1 mx-2 h-2 rounded-full appearance-none bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500" style="accent-color:#2563eb">
+        <span id="barDuration" class="text-sm text-gray-500 w-12 text-center">0:00</span>
+      </div>
+    </div>
+  </div>
+  <script>
+    // --- Barra inferior: pausa, seek y rediseño ---
+    let isBarDragging = false;
+    document.getElementById('barPauseBtn').addEventListener('click', () => {
+      playerA && playerA.pauseVideo();
+      connection.invoke("Pause");
+    });
+    document.getElementById('barRestartBtn').addEventListener('click', () => {
+      if (playerA) {
+        isSyncing = true;
+        playerA.seekTo(0, true);
+        playerA.playVideo();
+        connection.invoke("SeekPercent", 0);
+        setTimeout(() => { isSyncing = false; }, 300);
+      }
+    });
+    document.getElementById('barNextBtn').addEventListener('click', () => {
+      // Puedes implementar lógica de siguiente video aquí
+    });
+    function formatTime(sec) {
+      sec = Math.floor(sec);
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return `${m}:${s.toString().padStart(2, '0')}`;
+    }
+    function updateBarProgress() {
+      if (!playerA) return;
+      if (!isBarDragging) {
+        const current = safeGetCurrentTime(playerA);
+        const duration = safeGetDuration(playerA);
+        document.getElementById('barCurrentTime').textContent = formatTime(current);
+        document.getElementById('barDuration').textContent = formatTime(duration);
+        document.getElementById('barProgress').max = duration || 1;
+        document.getElementById('barProgress').value = current;
+      }
+    }
+    setInterval(updateBarProgress, 500);
+    const barProgress = document.getElementById('barProgress');
+    barProgress.addEventListener('mousedown', () => { isBarDragging = true; });
+    barProgress.addEventListener('touchstart', () => { isBarDragging = true; });
+    barProgress.addEventListener('mouseup', (e) => {
+      isBarDragging = false;
+      const val = Number(e.target.value);
+      if (!isNaN(val) && playerA) {
+        isSyncing = true;
+        playerA.seekTo(val, true);
+        connection.invoke("SeekPercent", Math.round((val / safeGetDuration(playerA)) * 100));
+        setTimeout(() => { isSyncing = false; }, 300);
+      }
+    });
+    barProgress.addEventListener('touchend', (e) => {
+      isBarDragging = false;
+      const val = Number(e.target.value);
+      if (!isNaN(val) && playerA) {
+        isSyncing = true;
+        playerA.seekTo(val, true);
+        connection.invoke("SeekPercent", Math.round((val / safeGetDuration(playerA)) * 100));
+        setTimeout(() => { isSyncing = false; }, 300);
+      }
+    });
+    barProgress.addEventListener('input', (e) => {
+      if (isBarDragging) {
+        const val = Number(e.target.value);
+        document.getElementById('barCurrentTime').textContent = formatTime(val);
+      }
+    });
+  </script>
+</div>
+</body>
+</html>

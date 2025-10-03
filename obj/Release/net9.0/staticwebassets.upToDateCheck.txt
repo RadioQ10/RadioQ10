@@ -1,0 +1,2 @@
+wwwroot\index.html
+C:\Users\Alexander Giraldo\Downloads\RadioQ10-master\RadioQ10-master\RadioQ10\wwwroot\index.html
