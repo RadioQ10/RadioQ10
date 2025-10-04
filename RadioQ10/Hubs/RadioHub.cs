@@ -11,13 +11,14 @@ public sealed class RadioHub : Hub
     private static long? CurrentStartTimestamp;
     private static int CurrentPercent = 0;
     private static bool IsPlaying = false;
+    private static Guid? CurrentQueueItemId;
 
     public override async Task OnConnectedAsync()
     {
-        // Envía el estado actual al nuevo cliente
+        // EnvÃ­a el estado actual al nuevo cliente
         if (!string.IsNullOrEmpty(CurrentVideoId) && CurrentStartTimestamp.HasValue)
         {
-            await Clients.Caller.SendAsync("SyncState", CurrentVideoId, CurrentStartTimestamp.Value, CurrentPercent, IsPlaying);
+            await Clients.Caller.SendAsync("SyncState", CurrentVideoId, CurrentStartTimestamp.Value, CurrentPercent, IsPlaying, CurrentQueueItemId);
         }
         await base.OnConnectedAsync();
     }
@@ -40,13 +41,14 @@ public sealed class RadioHub : Hub
         await Clients.All.SendAsync("SeekPercent", percent);
     }
 
-    public async Task LoadVideos(string id1, long startTimestamp)
+    public async Task LoadVideos(string id1, long startTimestamp, Guid? queueItemId)
     {
         CurrentVideoId = id1;
         CurrentStartTimestamp = startTimestamp;
         CurrentPercent = 0;
         IsPlaying = true;
-        await Clients.All.SendAsync("LoadVideos", id1, startTimestamp);
+        CurrentQueueItemId = queueItemId;
+        await Clients.All.SendAsync("LoadVideos", id1, startTimestamp, queueItemId);
     }
 
     public Task JoinRoom(string room)
@@ -67,4 +69,3 @@ public sealed class RadioHub : Hub
         await Clients.Group(room).SendAsync("ReceiveNumber", number);
     }
 }
-

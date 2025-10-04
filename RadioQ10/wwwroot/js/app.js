@@ -8,6 +8,8 @@ let playerA;
 let isSyncing = false; // evita loops de eventos
 let playerReady = false;
 let pendingSync = null;
+let currentQueueItemId = null;
+let isHandlingQueueEnd = false;
 
 const queueListEl = document.getElementById('queueList');
 const queueStatusEl = document.getElementById('queueStatus');
@@ -114,6 +116,62 @@ async function enqueueSong(details) {
   return item;
 }
 
+async function playOldestSongFromQueue() {
+  try {
+    const response = await fetch('/api/music/queue');
+    if (!response.ok) {
+      throw new Error(`Estado ${response.status}`);
+    }
+    const items = await response.json();
+    if (!Array.isArray(items) || items.length === 0) {
+      return false;
+    }
+    const nextItem = items[0];
+    if (!nextItem.videoId) {
+      return false;
+    }
+    currentQueueItemId = nextItem.id || null;
+    const startTimestamp = Date.now() + 1000;
+    await connection.invoke('LoadVideos', nextItem.videoId, startTimestamp, currentQueueItemId);
+    return true;
+  } catch (error) {
+    console.error('No se pudo iniciar la reproducción desde la cola', error);
+    return false;
+  }
+}
+
+async function handleQueueSongEnded() {
+  if (isHandlingQueueEnd) {
+    return;
+  }
+  isHandlingQueueEnd = true;
+  try {
+    const finishedId = currentQueueItemId;
+    currentQueueItemId = null;
+    if (finishedId) {
+      try {
+        const response = await fetch(`/api/music/queue/${finishedId}`, { method: 'DELETE' });
+        if (!response.ok && response.status !== 404) {
+          const message = await response.text();
+          throw new Error(message || `Estado ${response.status}`);
+        }
+      } catch (error) {
+        console.error('No se pudo eliminar la canción finalizada de la cola', error);
+      } finally {
+        fetchQueue();
+      }
+    } else {
+      fetchQueue();
+    }
+    const hasNext = await playOldestSongFromQueue();
+    if (!hasNext) {
+      connection.invoke('Pause');
+    }
+  } finally {
+    isHandlingQueueEnd = false;
+  }
+}
+
 // --- SignalR ---
 const connection = new signalR.HubConnectionBuilder()
   .withUrl("/radioHub")
@@ -124,7 +182,8 @@ connection.start().catch(err => console.error(err.toString()));
 fetchQueue();
 
 // Recibe eventos del hub
-connection.on("SyncState", (id1, startTimestamp, percent, isPlaying) => {
+connection.on("SyncState", (id1, startTimestamp, percent, isPlaying, queueItemId) => {
+  currentQueueItemId = queueItemId || null;
   // Sincroniza el estado global al conectar
   isSyncing = true;
   playerReady = false;
@@ -163,8 +222,9 @@ connection.on("SeekPercent", (percent) => {
   setPercent(percent);
   setTimeout(() => { isSyncing = false; isRemoteSeek = false; }, 300);
 });
-connection.on("LoadVideos", (id1, startTimestamp) => {
+connection.on("LoadVideos", (id1, startTimestamp, queueItemId) => {
   isSyncing = true;
+  currentQueueItemId = queueItemId || null;
   playerReady = false;
   playerA.loadVideoById({videoId: id1, startSeconds: 0});
   document.getElementById('vid1').value = id1;
@@ -227,6 +287,8 @@ function handleGlobalSync(e, player) {
     if (percent > 0 && percent <= 100) {
       connection.invoke("SeekPercent", percent);
     }
+  } else if (e.data === YT.PlayerState.ENDED) {
+    handleQueueSongEnded().catch(error => console.error('Error al manejar el final de la canción', error));
   }
 }
 
@@ -390,8 +452,11 @@ document.getElementById('barPauseBtn').addEventListener('click', () => {
   // notify server; server will broadcast Pause
   connection.invoke("Pause");
 });
-document.getElementById('barPlayBtn').addEventListener('click', () => {
-  connection.invoke("Play");
+document.getElementById('barPlayBtn').addEventListener('click', async () => {
+  const started = await playOldestSongFromQueue();
+  if (!started) {
+    connection.invoke("Play");
+  }
 });
 document.getElementById('barRestartBtn').addEventListener('click', () => {
   // request server to seek to 0 and then play
