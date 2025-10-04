@@ -45,38 +45,42 @@ function renderQueue(items) {
   queueListEl.innerHTML = '';
   if (!Array.isArray(items) || items.length === 0) {
     queueStatusEl.textContent = 'No hay canciones en cola.';
+    queueListEl.innerHTML = '<div class="rounded-2xl border border-dashed border-orange-200 bg-orange-50/50 px-5 py-6 text-center text-sm text-orange-500">La cola está vacía. Busca y selecciona videos para agregar.</div>';
     return;
   }
   queueStatusEl.textContent = `Canciones en cola: ${items.length}`;
-  items.forEach(item => {
+  items.forEach((item, index) => {
     const li = document.createElement('li');
-    li.className = 'queue-item';
+    li.className = 'group flex items-center gap-4 rounded-2xl border border-orange-100 bg-white/80 p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-orange-100/50 animate-fade-in';
+    li.style.animationDelay = `${index * 100}ms`;
 
     const thumb = document.createElement('img');
-    thumb.className = 'queue-thumb';
+    thumb.className = 'h-16 w-24 rounded-xl object-cover ring-1 ring-orange-100/60 group-hover:ring-orange-300 transition-all duration-300';
     thumb.alt = '';
     thumb.loading = 'lazy';
-    thumb.src = item.thumbnailUrl || (item.videoId ? `https://img.youtube.com/vi/${item.videoId}/default.jpg` : '');
+    thumb.src = item.thumbnailUrl || (item.videoId ? `https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg` : '');
 
     const body = document.createElement('div');
+    body.className = 'flex-1 space-y-1';
+    
     const title = document.createElement('div');
-    title.className = 'queue-title';
+    title.className = 'text-sm font-semibold text-slate-800 group-hover:text-orange-600 transition-colors duration-300 line-clamp-2';
     title.textContent = item.title;
     body.appendChild(title);
 
     if (item.requestedBy) {
       const meta = document.createElement('div');
-      meta.className = 'queue-meta';
-      meta.textContent = `Solicitada por ${item.requestedBy}`;
+      meta.className = 'text-xs text-slate-500';
+      meta.innerHTML = `<span class="inline-flex items-center gap-1"><svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/></svg>Solicitada por ${item.requestedBy}</span>`;
       body.appendChild(meta);
     }
 
     if (item.enqueuedAt) {
       const metaTime = document.createElement('div');
-      metaTime.className = 'queue-meta';
+      metaTime.className = 'text-xs text-slate-400';
       const parsed = new Date(item.enqueuedAt);
       if (!isNaN(parsed)) {
-        metaTime.textContent = parsed.toLocaleString();
+        metaTime.innerHTML = `<span class="inline-flex items-center gap-1"><svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"/></svg>${parsed.toLocaleString()}</span>`;
         body.appendChild(metaTime);
       }
     }
@@ -216,11 +220,13 @@ connection.on("SyncState", (id1, startTimestamp, percent, isPlaying, queueItemId
 connection.on("Play", () => {
   isSyncing = true;
   playerA && playerA.playVideo();
+  if (window.setBarState) window.setBarState(true);
   setTimeout(() => { isSyncing = false; }, 300);
 });
 connection.on("Pause", () => {
   isSyncing = true;
   playerA && playerA.pauseVideo();
+  if (window.setBarState) window.setBarState(false);
   setTimeout(() => { isSyncing = false; }, 300);
 });
 connection.on("SeekPercent", (percent) => {
@@ -313,17 +319,48 @@ function renderSearchResults(results) {
   const container = document.getElementById('searchResults');
   container.innerHTML = '';
   if (!results.length) {
-    container.innerHTML = '<div>No se encontraron videos.</div>';
+    container.innerHTML = '<div class="rounded-2xl border border-dashed border-orange-200 bg-orange-50/50 px-5 py-6 text-center text-sm text-orange-500">No se encontraron videos para esa búsqueda.</div>';
     return;
   }
-  results.forEach(video => {
-    const div = document.createElement('div');
-    div.className = 'video-result';
-    div.innerHTML = `<img class="video-thumb" src="${video.thumbnail}" alt="thumb"><span class="video-title">${video.title}</span>`;
-    div.addEventListener('click', () => {
+  results.forEach((video, index) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'group relative flex w-full items-center gap-4 rounded-2xl border border-transparent bg-white/90 p-4 text-left text-slate-800 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-orange-300 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-orange-200 animate-fade-in';
+    button.style.animationDelay = `${index * 100}ms`;
+    button.setAttribute('role', 'listitem');
+    button.setAttribute('aria-label', 'Sincronizar ' + video.title);
+    
+    const thumb = document.createElement('img');
+    thumb.src = video.thumbnail;
+    thumb.alt = 'Miniatura de ' + video.title;
+    thumb.className = 'h-20 w-32 rounded-xl object-cover ring-1 ring-orange-100/60 group-hover:ring-orange-300 transition-all duration-300';
+    
+    const info = document.createElement('div');
+    info.className = 'flex flex-col gap-1 flex-1';
+    
+    const title = document.createElement('span');
+    title.className = 'text-sm font-semibold text-slate-800 group-hover:text-orange-600 transition-colors duration-300 line-clamp-2';
+    title.textContent = video.title;
+    
+    const meta = document.createElement('span');
+    meta.className = 'text-xs text-slate-400';
+    meta.innerHTML = `<span class="inline-flex items-center gap-1"><svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20"><path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z"/></svg>ID: ${video.id}</span>`;
+    
+    const addIcon = document.createElement('div');
+    addIcon.className = 'flex h-8 w-8 items-center justify-center rounded-full bg-orange-100 text-orange-600 opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:scale-110';
+    addIcon.innerHTML = '<svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"/></svg>';
+    
+    info.appendChild(title);
+    info.appendChild(meta);
+    button.appendChild(thumb);
+    button.appendChild(info);
+    button.appendChild(addIcon);
+    
+    button.addEventListener('click', () => {
       selectVideo(video);
     });
-    container.appendChild(div);
+    
+    container.appendChild(button);
   });
 }
 
