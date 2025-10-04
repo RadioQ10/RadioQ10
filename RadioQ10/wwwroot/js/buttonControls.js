@@ -94,11 +94,23 @@
       const barPauseBtn = document.getElementById('barPauseBtn');
       if (barPlayBtn && barPauseBtn) {
         if (isPlaying) {
-          barPlayBtn.classList.add('hidden');
-          barPauseBtn.classList.remove('hidden');
+          barPlayBtn.style.transform = 'scale(0.8)';
+          barPlayBtn.style.opacity = '0';
+          setTimeout(() => {
+            barPlayBtn.classList.add('hidden');
+            barPauseBtn.classList.remove('hidden');
+            barPauseBtn.style.transform = 'scale(1)';
+            barPauseBtn.style.opacity = '1';
+          }, 150);
         } else {
-          barPlayBtn.classList.remove('hidden');
-          barPauseBtn.classList.add('hidden');
+          barPauseBtn.style.transform = 'scale(0.8)';
+          barPauseBtn.style.opacity = '0';
+          setTimeout(() => {
+            barPauseBtn.classList.add('hidden');
+            barPlayBtn.classList.remove('hidden');
+            barPlayBtn.style.transform = 'scale(1)';
+            barPlayBtn.style.opacity = '1';
+          }, 150);
         }
       }
     }

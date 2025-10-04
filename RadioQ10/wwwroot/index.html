@@ -61,6 +61,21 @@
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
+        @keyframes pulse-slow {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.8;
+            }
+        }
+        .animate-pulse-slow {
+            animation: pulse-slow 2s ease-in-out infinite;
+        }
+        .transition-all {
+            transition-property: all;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        }
     </style>
 </head>
 <body class="bg-[#fff6ef] text-slate-900 antialiased">
@@ -216,17 +231,19 @@
                 <span class="text-[0.7rem] text-slate-400">Controla todo sin perder el foco</span>
             </div>
             <div class="flex items-center justify-center gap-4">
-                <button id="barPlayBtn" class="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-[#ff7a1a] to-[#ff4d00] text-white shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-orange-200" aria-label="Reproducir">
-                    <svg class="h-5 w-5" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="m3.612.21 9.75 6.006a1 1 0 0 1 0 1.708l-9.75 6.006A1 1 0 0 1 2 13.006V1.003A1 1 0 0 1 3.612.21Z"/></svg>
+
+                <button id="barPlayBtn" class="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-[#ff7a1a] to-[#ff4d00] text-white shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:scale-110 focus:outline-none focus:ring-2 focus:ring-orange-200 active:scale-95 animate-pulse-slow" aria-label="Reproducir">
+                    <svg class="h-5 w-5 transition-transform duration-300" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="m3.612.21 9.75 6.006a1 1 0 0 1 0 1.708l-9.75 6.006A1 1 0 0 1 2 13.006V1.003A1 1 0 0 1 3.612.21Z"/></svg>
                 </button>
-                <button id="barPauseBtn" class="hidden flex h-12 w-12 items-center justify-center rounded-full border border-orange-200/70 bg-white text-orange-500 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-400 hover:text-orange-600 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-200" aria-label="Pausar">
-                    <svg class="h-5 w-5" viewBox="0 0 12 16" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M1.5 0A1.5 1.5 0 0 0 0 1.5v13a1.5 1.5 0 0 0 1.5 1.5h1A1.5 1.5 0 0 0 4 14.5v-13A1.5 1.5 0 0 0 2.5 0h-1Zm7 0A1.5 1.5 0 0 0 7 1.5v13A1.5 1.5 0 0 0 8.5 16h1A1.5 1.5 0 0 0 11 14.5v-13A1.5 1.5 0 0 0 9.5 0h-1Z"/></svg>
+                <button id="barPauseBtn" class="hidden flex h-12 w-12 items-center justify-center rounded-full border border-orange-200/70 bg-white text-orange-500 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-orange-400 hover:text-orange-600 hover:shadow-lg hover:scale-110 focus:outline-none focus:ring-2 focus:ring-orange-200 active:scale-95" aria-label="Pausar">
+                    <svg class="h-5 w-5 transition-transform duration-300" viewBox="0 0 12 16" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M1.5 0A1.5 1.5 0 0 0 0 1.5v13a1.5 1.5 0 0 0 1.5 1.5h1A1.5 1.5 0 0 0 4 14.5v-13A1.5 1.5 0 0 0 2.5 0h-1Zm7 0A1.5 1.5 0 0 0 7 1.5v13A1.5 1.5 0 0 0 8.5 16h1A1.5 1.5 0 0 0 11 14.5v-13A1.5 1.5 0 0 0 9.5 0h-1Z"/></svg>
                 </button>
-                <button id="barRestartBtn" class="flex h-12 w-12 items-center justify-center rounded-full border border-orange-200/70 bg-white text-orange-500 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-400 hover:text-orange-600 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-200" aria-label="Reiniciar">
-                    <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10 2v4m0 12v-4m0 4a8 8 0 1 1 5.657-13.657L18 7m0 0h-4m4 0V3"/></svg>
+
+                <button id="barRestartBtn" class="flex h-12 w-12 items-center justify-center rounded-full border border-orange-200/70 bg-white text-orange-500 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-orange-400 hover:text-orange-600 hover:shadow-lg hover:scale-110 hover:rotate-180 focus:outline-none focus:ring-2 focus:ring-orange-200 active:scale-95" aria-label="Reiniciar">
+                    <svg class="h-5 w-5 transition-transform duration-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M15.312 11.424a5.5 5.5 0 01-9.201 2.466l-.312-.311h2.433a.75.75 0 000-1.5H3.989a.75.75 0 00-.75.75v4.242a.75.75 0 001.5 0v-2.43l.31.31a7 7 0 0011.712-3.138.75.75 0 00-1.449-.39zm-3.068-9.93a7 7 0 00-11.412 3.14.75.75 0 101.449.39 5.5 5.5 0 019.201-2.466l.312.311h-2.433a.75.75 0 000 1.5h4.243a.75.75 0 00.75-.75V3.377a.75.75 0 00-1.5 0v2.43l-.31-.31z" clip-rule="evenodd"/></svg>
                 </button>
-                <button id="barNextBtn" class="flex h-12 w-12 items-center justify-center rounded-full border border-orange-200/70 bg-white text-orange-500 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-400 hover:text-orange-600 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-200" aria-label="Siguiente">
-                    <svg class="h-5 w-5" viewBox="0 0 12 16" fill="currentColor" aria-hidden="true"><path d="M11 0a1 1 0 0 0-1 1v5.7a2.028 2.028 0 0 0-.177-.194L3.33.732A2 2 0 0 0 0 2.227v11.546A1.977 1.977 0 0 0 1.181 15.6a1.982 1.982 0 0 0 2.147-.33l6.5-5.773A1.88 1.88 0 0 0 10 9.3V15a1 1 0 1 0 2 0V1a1 1 0 0 0-1-1Z"/></svg>
+                <button id="barNextBtn" class="flex h-12 w-12 items-center justify-center rounded-full border border-orange-200/70 bg-white text-orange-500 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-orange-400 hover:text-orange-600 hover:shadow-lg hover:scale-110 focus:outline-none focus:ring-2 focus:ring-orange-200 active:scale-95" aria-label="Siguiente">
+                    <svg class="h-5 w-5 transition-transform duration-300" viewBox="0 0 12 16" fill="currentColor" aria-hidden="true"><path d="M11 0a1 1 0 0 0-1 1v5.7a2.028 2.028 0 0 0-.177-.194L3.33.732A2 2 0 0 0 0 2.227v11.546A1.977 1.977 0 0 0 1.181 15.6a1.982 1.982 0 0 0 2.147-.33l6.5-5.773A1.88 1.88 0 0 0 10 9.3V15a1 1 0 1 0 2 0V1a1 1 0 0 0-1-1Z"/></svg>
                 </button>
             </div>
             <div class="flex items-center gap-3">
