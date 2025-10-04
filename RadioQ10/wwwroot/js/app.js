@@ -140,6 +140,17 @@ async function playOldestSongFromQueue() {
   }
 }
 
+async function removeQueueItemFromQueue(queueItemId) {
+  if (!queueItemId) {
+    return;
+  }
+  const response = await fetch(`/api/music/queue/${queueItemId}`, { method: 'DELETE' });
+  if (!response.ok && response.status !== 404) {
+    const message = await response.text();
+    throw new Error(message || `Estado ${response.status}`);
+  }
+}
+
 async function handleQueueSongEnded() {
   if (isHandlingQueueEnd) {
     return;
@@ -150,11 +161,7 @@ async function handleQueueSongEnded() {
     currentQueueItemId = null;
     if (finishedId) {
       try {
-        const response = await fetch(`/api/music/queue/${finishedId}`, { method: 'DELETE' });
-        if (!response.ok && response.status !== 404) {
-          const message = await response.text();
-          throw new Error(message || `Estado ${response.status}`);
-        }
+        await removeQueueItemFromQueue(finishedId);
       } catch (error) {
         console.error('No se pudo eliminar la canción finalizada de la cola', error);
       } finally {
@@ -302,51 +309,6 @@ function safeGetDuration(p) {
 }
 
 // --- Cargar video por ID (desde input) ---
-document.getElementById('loadBtn').addEventListener('click', async () => {
-  const idInput = document.getElementById('vid1');
-  const id1 = (idInput?.value || '').trim();
-  const title = (manualTitleInput?.value || '').trim();
-  if (!id1) {
-    alert('Pega el videoId y vuelve a intentar.');
-    return;
-  }
-  if (!title) {
-    alert('Completa el tï¿½tulo de la canciï¿½n.');
-    return;
-  }
-  try {
-    await enqueueSong({
-      videoId: id1,
-      title,
-      channelTitle: null,
-      thumbnailUrl: null
-    });
-  } catch (error) {
-    console.error('No se pudo guardar la canciï¿½n en la cola', error);
-    alert('Ocurriï¿½ un error al guardar la canciï¿½n en la cola.');
-    return;
-  }
-});
-
-// --- Buscador de videos de YouTube ---
-const API_KEY = 'AIzaSyCeSDqbhZ2ozXjfmgdKHfW5wCFbBaibMr0'; // <-- PON TU API KEY DE YOUTUBE
-document.getElementById('searchBtn').addEventListener('click', async () => {
-  const query = document.getElementById('searchQuery').value.trim();
-  if (!query) return;
-  const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=8&q=${encodeURIComponent(query)}&key=${API_KEY}`;
-  const res = await fetch(url);
-  const data = await res.json();
-  const results = (data.items || []).map(item => ({
-    id: item.id?.videoId,
-    title: item.snippet?.title ?? '',
-    channelTitle: item.snippet?.channelTitle ?? '',
-    thumbnail: item.snippet?.thumbnails?.medium?.url
-      || item.snippet?.thumbnails?.default?.url
-      || (item.id?.videoId ? `https://img.youtube.com/vi/${item.id.videoId}/default.jpg` : '')
-  })).filter(video => video.id && video.title);
-  renderSearchResults(results);
-});
-
 function renderSearchResults(results) {
   const container = document.getElementById('searchResults');
   container.innerHTML = '';
@@ -391,14 +353,6 @@ async function selectVideo(video) {
 }
 
 // --- Controles play/pause globales: ahora solo notifican al hub ---
-document.getElementById('playBtn').addEventListener('click', () => {
-  // send intent to server, server will broadcast Play to everyone
-  connection.invoke("Play");
-});
-document.getElementById('pauseBtn').addEventListener('click', () => {
-  connection.invoke("Pause");
-});
-
 // --- MÃ©todo pÃºblico: ir al porcentaje (1-100) ---
 async function setPercent(p) {
   // clamp
@@ -448,24 +402,6 @@ function ensureMetadata(player) {
 let isBarDragging = false;
 let isRemoteSeek = false;
 
-document.getElementById('barPauseBtn').addEventListener('click', () => {
-  // notify server; server will broadcast Pause
-  connection.invoke("Pause");
-});
-document.getElementById('barPlayBtn').addEventListener('click', async () => {
-  const started = await playOldestSongFromQueue();
-  if (!started) {
-    connection.invoke("Play");
-  }
-});
-document.getElementById('barRestartBtn').addEventListener('click', () => {
-  // request server to seek to 0 and then play
-  connection.invoke("SeekPercent", 0);
-  setTimeout(() => connection.invoke("Play"), 150);
-});
-document.getElementById('barNextBtn').addEventListener('click', () => {
-  // Puedes implementar lÃ³gica de siguiente video aquÃ­
-});
 function formatTime(sec) {
   sec = Math.floor(sec);
   const m = Math.floor(sec / 60);
@@ -512,4 +448,18 @@ barProgress.addEventListener('input', (e) => {
     document.getElementById('barCurrentTime').textContent = formatTime(val);
   }
 });
+
+window.radioApp = {
+  connection,
+  enqueueSong,
+  renderSearchResults,
+  selectVideo,
+  playOldestSongFromQueue,
+  setPercent,
+  fetchQueue,
+  removeQueueItemFromQueue,
+  getCurrentQueueItemId: () => currentQueueItemId,
+  clearCurrentQueueItem: () => { currentQueueItemId = null; },
+  handleQueueSongEnded
+};
 
