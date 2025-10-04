@@ -1,0 +1,125 @@
+:root {
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+
+body {
+    margin: 24px;
+}
+
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+input[type="text"] {
+    padding: 8px 10px;
+    min-width: 260px;
+}
+
+button {
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+#player1 {
+    aspect-ratio: 16 / 9;
+    width: 100%;
+}
+
+.small {
+    opacity: .8;
+    font-size: .9rem;
+}
+
+.stack {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+#searchResults {
+    margin-top: 16px;
+}
+
+.video-result {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+}
+
+.video-result:hover {
+    background: #f5f5f5;
+}
+
+.video-thumb {
+    width: 120px;
+    height: 68px;
+    object-fit: cover;
+}
+
+.video-title {
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.queue-section {
+    margin-top: 24px;
+}
+
+.queue-section h2 {
+    margin: 0 0 8px;
+    font-size: 1.2rem;
+}
+
+.queue-meta {
+    font-size: .85rem;
+    color: #555;
+}
+
+.queue-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    max-width: 560px;
+}
+
+.queue-item {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 12px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.queue-item:last-child {
+    border-bottom: none;
+}
+
+.queue-thumb {
+    width: 64px;
+    height: 36px;
+    object-fit: cover;
+    border-radius: 4px;
+    background: #ddd;
+}
+
+.queue-title {
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+#percent {
+    width: 80px;
+}
+
+#barProgress {
+    accent-color: #2563eb;
+}
