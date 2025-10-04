@@ -3,9 +3,8 @@ name: Build & Deploy QA1
 on:
   workflow_run:
     workflows: ["Run CSX QA1"]
-    types:
-      - completed
-    branches: ["developer/berdugo"]
+    types: [completed]
+    branches: ["developer/berdugo"]   # solo se dispara si el workflow previo corrió en esta rama
 
 env:
   PROJECT_PATH: "RadioQ10/RadioQ10.csproj"
@@ -17,11 +16,23 @@ env:
 
 jobs:
   build-and-deploy:
+    # Asegura que solo corra si el workflow previo fue exitoso
+    # y refuerza que la rama sea la esperada
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'developer/berdugo' }}
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Info del run que disparó este workflow
+        run: |
+          echo "Workflow previo: ${{ github.event.workflow_run.name }}"
+          echo "Rama: ${{ github.event.workflow_run.head_branch }}"
+          echo "SHA : ${{ github.event.workflow_run.head_sha }}"
+
+      - name: Checkout (exactamente el commit del workflow que terminó)
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
 
       - name: Setup .NET 9 SDK
         uses: actions/setup-dotnet@v4
@@ -37,7 +48,7 @@ jobs:
       - name: Build (Release, net9.0, win-x86)
         run: dotnet build "$PROJECT_PATH" -c Release -f net9.0 -r win-x86 --no-restore
 
-      - name: Publish (net9.0 | win-x86 | self-contained)
+      - name: Publish (net9.0 | win-x86 | framework-dependent)
         run: |
           dotnet publish "$PROJECT_PATH" \
             --configuration Release \
@@ -57,8 +68,6 @@ jobs:
           protocol: ftp
           local-dir: ./publish/
           server-dir: ${{ env.FTP_DIR }}
-          # Ya limpiamos manualmente; no hace falta clean-slate aquí.
-          # dangerous-clean-slate: false
           exclude: |
             **/*.pdb
             **/*.xml
