@@ -5,6 +5,10 @@ on:
     branches: ["developer/berdugo"]
   workflow_dispatch:
 
+concurrency:
+  group: csx-qa1-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   run-csx:
     runs-on: ubuntu-latest
