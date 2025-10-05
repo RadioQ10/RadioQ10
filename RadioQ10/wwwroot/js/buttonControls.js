@@ -68,6 +68,7 @@
     if (playBtn) {
       playBtn.addEventListener('click', () => {
         connection.invoke('Play');
+        setBarState(true);
       });
     }
 
@@ -75,6 +76,7 @@
     if (pauseBtn) {
       pauseBtn.addEventListener('click', () => {
         connection.invoke('Pause');
+        setBarState(false);
       });
     }
 
@@ -87,10 +89,37 @@
       });
     }
 
+    function setBarState(isPlaying) {
+      const barPlayBtn = document.getElementById('barPlayBtn');
+      const barPauseBtn = document.getElementById('barPauseBtn');
+      if (barPlayBtn && barPauseBtn) {
+        if (isPlaying) {
+          barPlayBtn.style.transform = 'scale(0.8)';
+          barPlayBtn.style.opacity = '0';
+          setTimeout(() => {
+            barPlayBtn.classList.add('hidden');
+            barPauseBtn.classList.remove('hidden');
+            barPauseBtn.style.transform = 'scale(1)';
+            barPauseBtn.style.opacity = '1';
+          }, 150);
+        } else {
+          barPauseBtn.style.transform = 'scale(0.8)';
+          barPauseBtn.style.opacity = '0';
+          setTimeout(() => {
+            barPauseBtn.classList.add('hidden');
+            barPlayBtn.classList.remove('hidden');
+            barPlayBtn.style.transform = 'scale(1)';
+            barPlayBtn.style.opacity = '1';
+          }, 150);
+        }
+      }
+    }
+
     const barPauseBtn = document.getElementById('barPauseBtn');
     if (barPauseBtn) {
       barPauseBtn.addEventListener('click', () => {
         connection.invoke('Pause');
+        setBarState(false);
       });
     }
 
@@ -102,11 +131,15 @@
           if (!started) {
             connection.invoke('Play');
           }
+          setBarState(true);
         } catch (error) {
           console.error('No se pudo reproducir la canción desde la cola', error);
         }
       });
     }
+
+    // Exponer función para uso en app.js
+    window.setBarState = setBarState;
 
     const barRestartBtn = document.getElementById('barRestartBtn');
     if (barRestartBtn) {

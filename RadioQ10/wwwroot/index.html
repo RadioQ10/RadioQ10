@@ -2,94 +2,259 @@
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <title>Reproductor YouTube sincronizado (1 video)</title>
+    <title>Radio Q10 | Sala sincronizada</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="stylesheet" href="css/index.css" />
-    <!-- SignalR client -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        q10: {
+                            orange: '#ff6d00',
+                            orangeDark: '#d95300',
+                            cream: '#fff2e6'
+                        }
+                    },
+                    boxShadow: {
+                        glow: '0 25px 70px -35px rgba(255, 109, 0, 0.55)'
+                    },
+                    fontFamily: {
+                        brand: ['Poppins', 'ui-sans-serif', 'system-ui']
+                    }
+                }
+            }
+        };
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <style>
+        body {
+            font-family: 'Poppins', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        #player1 iframe {
+            width: 100% !important;
+            height: 100% !important;
+            border-radius: 1.5rem;
+        }
+        ::selection {
+            background-color: rgba(255, 109, 0, 0.2);
+        }
+        @keyframes fade-in {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .animate-fade-in {
+            animation: fade-in 0.5s ease-out forwards;
+        }
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        @keyframes pulse-slow {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.8;
+            }
+        }
+        .animate-pulse-slow {
+            animation: pulse-slow 2s ease-in-out infinite;
+        }
+        .transition-all {
+            transition-property: all;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
 </head>
-<body>
-  <h1>Video de YouTube sincronizado</h1>
+<body class="bg-[#fff6ef] text-slate-900 antialiased">
+    <div class="relative min-h-screen overflow-hidden">
+        <div class="pointer-events-none absolute inset-0">
+            <div class="absolute -top-32 -left-24 h-96 w-96 rounded-full bg-gradient-to-br from-[#ff9740] via-[#ff7d1a] to-[#ff6d00] opacity-30 blur-3xl"></div>
+            <div class="absolute bottom-0 right-[-10%] h-[28rem] w-[28rem] rounded-full bg-gradient-to-br from-[#ffd4a1] via-white to-white opacity-70 blur-3xl"></div>
+            <div class="absolute top-1/2 left-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-white/30"></div>
+        </div>
 
-  <div class="controls">
-    <div class="stack">
-      <label>Video (videoId):</label>
-      <input id="vid1" type="text" placeholder="p. ej. dQw4w9WgXcQ" />
+        <div class="relative z-10 flex min-h-screen flex-col">
+            <header class="border-b border-white/60 bg-white/70 backdrop-blur-md">
+                <nav class="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5">
+                    <div class="flex items-center gap-4">
+                        <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#ff7a1a] to-[#ff5400] text-lg font-semibold text-white shadow-glow">Q10</div>
+                        <div>
+                            <p class="text-lg font-semibold text-slate-900">Radio Q10</p>
+                            <p class="text-xs uppercase tracking-[0.35em] text-orange-500/80">Jam Academica</p>
+                        </div>
+                    </div>
+                    <div class="hidden md:flex items-center gap-8 text-sm font-medium text-slate-500">
+                        <span class="rounded-full border border-orange-100 px-4 py-1.5 text-orange-500">Sincronizacion en vivo</span>
+                        <span class="text-slate-400">Control en grupo</span>
+                        <span class="text-slate-400">YouTube + SignalR</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span id="connectionStatus" class="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-600 shadow-sm"><span class="text-base leading-none">&#9679;</span><span>Conectando...</span></span>
+                    </div>
+                </nav>
+            </header>
+
+            <main class="flex-1">
+                <section class="mx-auto grid w-full max-w-6xl gap-12 px-6 pb-16 pt-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+                    <div class="space-y-9">
+                        <span class="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-white/70 px-4 py-1 text-sm font-medium text-orange-500 shadow-sm">Sala JAM sincronizada</span>
+                        <div class="space-y-6">
+                            <h1 class="text-4xl font-semibold leading-tight text-slate-900 sm:text-5xl">Controla el ritmo de la JAM con Radio Q10</h1>
+                            <p class="max-w-xl text-base leading-relaxed text-slate-600">Carga un video de YouTube, comparte el enlace con tu equipo y mantengan todos la sesion sincronizada. Si alguien adelanta, pausa o busca, el resto del grupo lo vera al instante.</p>
+                        </div>
+                        <ul class="grid gap-4 text-sm text-slate-600 sm:grid-cols-2">
+                            <li class="flex items-start gap-3 rounded-2xl border border-orange-100 bg-white/80 p-4 shadow-sm">
+                                <span class="mt-1 h-2 w-2 rounded-full bg-gradient-to-br from-[#ff7a1a] to-[#ff4d00]"></span>
+                                <span>Sincronizacion basada en SignalR con controles compartidos para toda la sala.</span>
+                            </li>
+                            <li class="flex items-start gap-3 rounded-2xl border border-orange-100 bg-white/80 p-4 shadow-sm">
+                                <span class="mt-1 h-2 w-2 rounded-full bg-gradient-to-br from-[#ff7a1a] to-[#ff4d00]"></span>
+                                <span>Buscador de YouTube integrado para encontrar y lanzar la proxima pista.</span>
+                            </li>
+                            <li class="flex items-start gap-3 rounded-2xl border border-orange-100 bg-white/80 p-4 shadow-sm">
+                                <span class="mt-1 h-2 w-2 rounded-full bg-gradient-to-br from-[#ff7a1a] to-[#ff4d00]"></span>
+                                <span>Barra flotante con avance rapido, reinicio y progreso sincronizado.</span>
+                            </li>
+                            <li class="flex items-start gap-3 rounded-2xl border border-orange-100 bg-white/80 p-4 shadow-sm">
+                                <span class="mt-1 h-2 w-2 rounded-full bg-gradient-to-br from-[#ff7a1a] to-[#ff4d00]"></span>
+                                <span>Lista de reproduccion colaborativa: comparte el ID o el buscador y listo.</span>
+                            </li>
+                        </ul>
+
+                        <section class="queue-section">
+                            <h2 class="text-xl font-semibold text-slate-900 mb-4">Cola actual</h2>
+                            <div id="queueStatus" class="text-sm text-slate-500 mb-3">Cargando la cola...</div>
+                            <ul id="queueList" class="space-y-2"></ul>
+                        </section>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div class="rounded-[2rem] border border-white/70 bg-slate-950/90 p-2 shadow-glow">
+                            <div class="relative overflow-hidden rounded-[1.6rem] border border-white/10 bg-slate-950">
+                                <div class="absolute -top-24 -right-16 h-52 w-52 rounded-full bg-gradient-to-br from-[#ff9a3d] via-[#ff6d00] to-[#ff4800] opacity-40 blur-3xl"></div>
+                                <div id="player1" class="relative aspect-video w-full bg-black"></div>
+                            </div>
+                            <div class="flex flex-col gap-1 rounded-[1.5rem] bg-slate-950/80 p-5 text-sm text-orange-50">
+                                <span class="text-xs uppercase tracking-[0.4em] text-orange-200/80">Ahora sonando</span>
+                                <a id="nowPlaying" href="#" target="_blank" rel="noopener" class="text-lg font-semibold text-white/60 underline-offset-4 hover:underline pointer-events-none">Sin video seleccionado</a>
+                                <p class="text-xs text-orange-200/70">El video que elijas se compartira con toda la sala automaticamente.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="mx-auto grid w-full max-w-6xl gap-8 px-6 pb-24 lg:grid-cols-[0.85fr_1.15fr]">
+                    <div class="rounded-[2rem] border border-orange-100/80 bg-white/80 p-8 shadow-xl shadow-orange-100/50">
+                        <div class="space-y-6">
+                            <div>
+                                <h2 class="text-2xl font-semibold text-slate-900">Panel de control</h2>
+                                <p class="text-sm text-slate-500">Comparte el <span class="font-semibold text-orange-500">videoId</span> o usa el buscador para mantener sincronizada la JAM.</p>
+                            </div>
+                            <div class="space-y-5">
+                                <label class="flex flex-col gap-2 text-sm font-medium text-slate-600">
+                                    <span>Video (videoId de YouTube)</span>
+                                    <div class="flex flex-col gap-3 sm:flex-row">
+                                        <input id="vid1" type="text" placeholder="p. ej. dQw4w9WgXcQ" class="w-full rounded-2xl border border-orange-200/70 bg-white/90 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-200" />
+                                        <button id="loadBtn" class="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-[#ff7a1a] to-[#ff5b00] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-200/60 transition hover:shadow-xl focus:outline-none">Sincronizar grupo</button>
+                                    </div>
+                                </label>
+                                <div class="flex flex-col gap-3 sm:flex-row">
+                                    <label class="flex flex-col gap-2 text-sm font-medium text-slate-600 flex-1">
+                                        <span>Título:</span>
+                                        <input id="vid1Title" type="text" placeholder="Título de la canción" class="w-full rounded-2xl border border-orange-200/70 bg-white/90 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-200" />
+                                    </label>
+                                    <label class="flex flex-col gap-2 text-sm font-medium text-slate-600 flex-1">
+                                        <span>Solicitado por:</span>
+                                        <input id="requestedByInput" type="text" placeholder="Tu nombre (opcional)" class="w-full rounded-2xl border border-orange-200/70 bg-white/90 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-200" />
+                                    </label>
+                                </div>
+                                <div class="grid gap-3 sm:grid-cols-2">
+                                    <button id="playBtn" class="flex items-center justify-center rounded-2xl border border-orange-200/70 bg-white/90 px-4 py-3 text-sm font-semibold text-orange-600 transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-orange-100 focus:outline-none focus:ring-2 focus:ring-orange-200">Reproducir</button>
+                                    <button id="pauseBtn" class="flex items-center justify-center rounded-2xl border border-orange-200/70 bg-white/90 px-4 py-3 text-sm font-semibold text-orange-600 transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-orange-100 focus:outline-none focus:ring-2 focus:ring-orange-200">Pausar</button>
+                                </div>
+                                <div class="flex flex-col gap-3 rounded-2xl border border-dashed border-orange-200/70 bg-orange-50/70 p-4 sm:flex-row sm:items-end sm:justify-between">
+                                    <div class="flex flex-col gap-2 text-sm text-slate-600">
+                                        <span class="font-semibold text-orange-500">Ir a un punto especifico</span>
+                                        <span>Introduce un porcentaje entre 0 y 100 y haz clic en Ir.</span>
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <input id="percent" type="number" min="0" max="100" value="50" class="w-24 rounded-xl border border-orange-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-200" />
+                                        <button id="seekPercentBtn" class="rounded-xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-200">Ir</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rounded-[2rem] border border-orange-100/80 bg-white/85 p-8 shadow-xl shadow-orange-100/40">
+                        <div class="space-y-6">
+                            <div class="flex flex-col gap-2">
+                                <h2 class="text-2xl font-semibold text-slate-900">Explorar en YouTube</h2>
+                                <p class="text-sm text-slate-500">Busca contenido sin salir de la sala. Selecciona un resultado para compartirlo con todos.</p>
+                            </div>
+                            <div class="flex flex-col gap-4">
+                                <div class="flex flex-col gap-3 md:flex-row">
+                                    <div class="relative flex-1">
+                                        <input id="searchQuery" type="text" placeholder="Busca cursos, playlists o sesiones en vivo..." class="w-full rounded-2xl border border-orange-200/70 bg-white/95 px-4 py-3 text-sm text-slate-700 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-200" />
+                                        <span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xs font-medium uppercase tracking-[0.3em] text-orange-300">Q10</span>
+                                    </div>
+                                    <button id="searchBtn" class="inline-flex items-center justify-center rounded-2xl border border-transparent bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-400/50 transition hover:-translate-y-0.5 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-orange-200">Buscar</button>
+                                </div>
+                                <div id="searchResults" class="grid max-h-96 gap-3 overflow-y-auto pr-1" role="list">
+                                    <div class="rounded-2xl border border-dashed border-orange-200 bg-orange-50/50 px-5 py-6 text-center text-sm text-orange-500">Busca un termino para ver sugerencias y sincronizarlas con tu equipo.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
     </div>
-    <div class="stack">
-      <label>Tï¿½tulo:</label>
-      <input id="vid1Title" type="text" placeholder="Tï¿½tulo de la canciï¿½n" />
+
+    <div class="fixed bottom-0 left-0 z-50 w-full border-t border-orange-100/80 bg-white/90 backdrop-blur-md">
+        <div class="mx-auto flex w-full max-w-4xl flex-col gap-3 px-5 py-4">
+            <div class="flex items-center justify-between text-xs text-slate-500">
+                <span class="font-semibold uppercase tracking-[0.35em] text-orange-400">Panel flotante</span>
+                <span class="text-[0.7rem] text-slate-400">Controla todo sin perder el foco</span>
+            </div>
+            <div class="flex items-center justify-center gap-4">
+
+                <button id="barPlayBtn" class="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-[#ff7a1a] to-[#ff4d00] text-white shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:scale-110 focus:outline-none focus:ring-2 focus:ring-orange-200 active:scale-95 animate-pulse-slow" aria-label="Reproducir">
+                    <svg class="h-5 w-5 transition-transform duration-300" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="m3.612.21 9.75 6.006a1 1 0 0 1 0 1.708l-9.75 6.006A1 1 0 0 1 2 13.006V1.003A1 1 0 0 1 3.612.21Z"/></svg>
+                </button>
+                <button id="barPauseBtn" class="hidden flex h-12 w-12 items-center justify-center rounded-full border border-orange-200/70 bg-white text-orange-500 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-orange-400 hover:text-orange-600 hover:shadow-lg hover:scale-110 focus:outline-none focus:ring-2 focus:ring-orange-200 active:scale-95" aria-label="Pausar">
+                    <svg class="h-5 w-5 transition-transform duration-300" viewBox="0 0 12 16" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M1.5 0A1.5 1.5 0 0 0 0 1.5v13a1.5 1.5 0 0 0 1.5 1.5h1A1.5 1.5 0 0 0 4 14.5v-13A1.5 1.5 0 0 0 2.5 0h-1Zm7 0A1.5 1.5 0 0 0 7 1.5v13A1.5 1.5 0 0 0 8.5 16h1A1.5 1.5 0 0 0 11 14.5v-13A1.5 1.5 0 0 0 9.5 0h-1Z"/></svg>
+                </button>
+
+                <button id="barRestartBtn" class="flex h-12 w-12 items-center justify-center rounded-full border border-orange-200/70 bg-white text-orange-500 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-orange-400 hover:text-orange-600 hover:shadow-lg hover:scale-110 hover:rotate-180 focus:outline-none focus:ring-2 focus:ring-orange-200 active:scale-95" aria-label="Reiniciar">
+                    <svg class="h-5 w-5 transition-transform duration-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M15.312 11.424a5.5 5.5 0 01-9.201 2.466l-.312-.311h2.433a.75.75 0 000-1.5H3.989a.75.75 0 00-.75.75v4.242a.75.75 0 001.5 0v-2.43l.31.31a7 7 0 0011.712-3.138.75.75 0 00-1.449-.39zm-3.068-9.93a7 7 0 00-11.412 3.14.75.75 0 101.449.39 5.5 5.5 0 019.201-2.466l.312.311h-2.433a.75.75 0 000 1.5h4.243a.75.75 0 00.75-.75V3.377a.75.75 0 00-1.5 0v2.43l-.31-.31z" clip-rule="evenodd"/></svg>
+                </button>
+                <button id="barNextBtn" class="flex h-12 w-12 items-center justify-center rounded-full border border-orange-200/70 bg-white text-orange-500 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-orange-400 hover:text-orange-600 hover:shadow-lg hover:scale-110 focus:outline-none focus:ring-2 focus:ring-orange-200 active:scale-95" aria-label="Siguiente">
+                    <svg class="h-5 w-5 transition-transform duration-300" viewBox="0 0 12 16" fill="currentColor" aria-hidden="true"><path d="M11 0a1 1 0 0 0-1 1v5.7a2.028 2.028 0 0 0-.177-.194L3.33.732A2 2 0 0 0 0 2.227v11.546A1.977 1.977 0 0 0 1.181 15.6a1.982 1.982 0 0 0 2.147-.33l6.5-5.773A1.88 1.88 0 0 0 10 9.3V15a1 1 0 1 0 2 0V1a1 1 0 0 0-1-1Z"/></svg>
+                </button>
+            </div>
+            <div class="flex items-center gap-3">
+                <span id="barCurrentTime" class="w-12 text-center text-xs font-semibold text-slate-500">0:00</span>
+                <input id="barProgress" type="range" min="0" max="100" value="0" class="h-2 flex-1 rounded-full bg-orange-100 accent-[#ff6d00]" style="accent-color:#ff6d00">
+                <span id="barDuration" class="w-12 text-center text-xs font-semibold text-slate-500">0:00</span>
+            </div>
+        </div>
     </div>
-    <button id="loadBtn">Cargar</button>
-    <button id="playBtn">Play</button>
-    <button id="pauseBtn">Pause</button>
-    <div class="stack">
-      <label for="percent">Ir a %:</label>
-      <input id="percent" type="number" min="1" max="100" value="50" />
-      <button id="seekPercentBtn">Ir</button>
-    </div>
-  </div>
 
-  <div class="controls">
-    <div class="stack">
-      <input id="searchQuery" type="text" placeholder="Buscar en YouTube..." />
-      <button id="searchBtn">Buscar</button>
-    </div>
-    <div class="stack">
-      <label>Solicitado por:</label>
-      <input id="requestedByInput" type="text" placeholder="Tu nombre (opcional)" />
-    </div>
-  </div>
-  <div id="searchResults"></div>
-
-  <section class="queue-section">
-    <h2>Cola actual</h2>
-    <div id="queueStatus" class="small">Cargando la cola...</div>
-    <ul id="queueList" class="queue-list"></ul>
-  </section>
-
-  <div id="player1"></div>
-
-  <p class="small">
-    Tips: busca videos, selecciona uno o pega el ID y pulsa <b>Cargar</b>. Usa el campo â€œIr a %â€ o llama <code>setPercent(75)</code> desde la consola.
-  </p>
-
-  <!-- Carga de la IFrame API -->
-
-  <div class="fixed bottom-0 left-0 z-50 w-full px-0 py-4 bg-white border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-    <div class="flex flex-col items-center justify-center w-full">
-      <div class="flex items-center justify-center gap-6 mb-2">
-        <button id="barPlayBtn" class="flex items-center justify-center w-10 h-10 bg-blue-600 rounded-full hover:bg-blue-700 focus:outline-none">
-          <svg class="w-5 h-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 10 16">
-            <polygon points="0,0 10,8 0,16" />
-          </svg>
-        </button>
-        <button id="barPauseBtn" class="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-full hover:bg-gray-200 focus:outline-none">
-          <svg class="w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 10 16">
-            <path fill-rule="evenodd" d="M0 .8C0 .358.32 0 .714 0h1.429c.394 0 .714.358.714.8v14.4c0 .442-.32.8-.714.8H.714a.678.678 0 0 1-.505-.234A.851.851 0 0 1 0 15.2V.8Zm7.143 0c0-.442.32-.8.714-.8h1.429c.19 0 .37.084.505.234.134.15.209.354.209.566v14.4c0 .442-.32.8-.714.8H7.857c-.394 0-.714-.358-.714-.8V.8Z" clip-rule="evenodd"/>
-          </svg>
-        </button>
-        <button id="barNextBtn" class="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-full hover:bg-gray-200 focus:outline-none">
-          <svg class="w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 12 16">
-            <path d="M11 0a1 1 0 0 0-1 1v5.7a2.028 2.028 0 0 0-.177-.194L3.33.732A2 2 0 0 0 0 2.227v11.546A1.977 1.977 0 0 0 1.181 15.6a1.982 1.982 0 0 0 2.147-.33l6.5-5.773A1.88 1.88 0 0 0 10 9.3V15a1 1 0 1 0 2 0V1a1 1 0 0 0-1-1Z"/>
-          </svg>
-        </button>
-        <button id="barRestartBtn" class="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-full hover:bg-gray-200 focus:outline-none">
-          <svg class="w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 20">
-            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 1v5h-5M2 19v-5h5m10-4a8 8 0 0 1-14.947 3.97M1 10a8 8 0 0 1 14.947-3.97"/>
-          </svg>
-        </button>
-      </div>
-      <div class="flex items-center w-full max-w-xl px-4">
-        <span id="barCurrentTime" class="text-sm text-gray-500 w-12 text-center">0:00</span>
-        <input id="barProgress" type="range" min="0" max="100" value="0" class="flex-1 mx-2 h-2 rounded-full appearance-none bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
-        <span id="barDuration" class="text-sm text-gray-500 w-12 text-center">0:00</span>
-      </div>
-    </div>
-  </div>
-</div>
-  <script src="js/app.js"></script>
-  <script src="js/buttonControls.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/buttonControls.js"></script>
 </body>
 </html>
