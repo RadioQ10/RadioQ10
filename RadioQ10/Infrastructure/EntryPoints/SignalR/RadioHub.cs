@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.SignalR;
-using System;
-using System.Threading.Tasks;
 
-namespace RadioQ10.Hubs;
+namespace RadioQ10.Infrastructure.EntryPoints.SignalR;
 
 public sealed class RadioHub : Hub
 {

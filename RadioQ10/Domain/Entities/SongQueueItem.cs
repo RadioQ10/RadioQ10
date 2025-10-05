@@ -1,4 +1,4 @@
-namespace RadioQ10.Models;
+namespace RadioQ10.Domain.Entities;
 
 public sealed class SongQueueItem
 {

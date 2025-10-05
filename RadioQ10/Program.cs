@@ -1,9 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using RadioQ10.Data;
-using RadioQ10.Hubs;
-using RadioQ10.Options;
-using RadioQ10.Services;
+using RadioQ10.Application.Interfaces;
+using RadioQ10.Infrastructure.EntryPoints.SignalR;
+using RadioQ10.Infrastructure.Options;
+using RadioQ10.Infrastructure.Persistence;
+using RadioQ10.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 

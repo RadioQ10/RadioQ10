@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using RadioQ10.Models;
-using RadioQ10.Services;
+using RadioQ10.Application.Interfaces;
+using RadioQ10.Domain.Entities;
 
-namespace RadioQ10.Controllers;
+namespace RadioQ10.Infrastructure.EntryPoints.Web.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

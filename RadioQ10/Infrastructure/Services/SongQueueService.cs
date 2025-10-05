@@ -1,8 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using RadioQ10.Models;
-using RadioQ10.Data;
+using RadioQ10.Application.Interfaces;
+using RadioQ10.Domain.Entities;
+using RadioQ10.Infrastructure.Persistence;
 
-namespace RadioQ10.Services;
+namespace RadioQ10.Infrastructure.Services;
 
 public sealed class SongQueueService : ISongQueueService
 {
