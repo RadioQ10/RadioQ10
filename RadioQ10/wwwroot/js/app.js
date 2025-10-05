@@ -227,8 +227,13 @@ async function selectVideo(video) {
       thumbnailUrl: video.thumbnail ?? null
     });
   } catch (error) {
-    console.error('No se pudo guardar la canciï¿½n en la cola', error);
-    alert('Ocurriï¿½ un error al guardar la canciï¿½n en la cola.');
+    console.error('No se pudo guardar la canción en la cola', error);
+    const message = error instanceof Error ? error.message : '';
+    if (message && message.toLowerCase().includes('nombre')) {
+      alert(message);
+    } else {
+      alert('Ocurrió un error al guardar la canción en la cola.');
+    }
     return;
   }
 }

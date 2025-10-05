@@ -29,8 +29,16 @@ public sealed class SongQueueService : ISongQueueService
             .FirstOrDefault(item => item.Id == id);
     }
 
-    public SongQueueItem Enqueue(string videoId, string title, string? channelTitle, string? thumbnailUrl, string? requestedBy)
+    public SongQueueItem Enqueue(string videoId, string title, string? channelTitle, string? thumbnailUrl, Guid userId, string? requestedBy)
     {
+        var user = _dbContext.Users
+            .AsNoTracking()
+            .FirstOrDefault(u => u.Id == userId);
+        if (user is null)
+        {
+            throw new ArgumentException("El usuario especificado no existe.", nameof(userId));
+        }
+
         var item = new SongQueueItem
         {
             Id = Guid.NewGuid(),
@@ -38,7 +46,8 @@ public sealed class SongQueueService : ISongQueueService
             Title = title,
             ChannelTitle = channelTitle,
             ThumbnailUrl = thumbnailUrl,
-            RequestedBy = requestedBy,
+            RequestedBy = user.Name,
+            RequestedByUserId = user.Id,
             EnqueuedAt = DateTimeOffset.UtcNow
         };
 

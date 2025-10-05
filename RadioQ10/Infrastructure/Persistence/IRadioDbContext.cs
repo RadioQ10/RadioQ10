@@ -7,6 +7,8 @@ public interface IRadioDbContext
 {
     DbSet<SongQueueItem> SongQueue { get; }
 
+    DbSet<RadioUser> Users { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 
     int SaveChanges();

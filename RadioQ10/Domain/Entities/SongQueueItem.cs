@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace RadioQ10.Domain.Entities;
 
 public sealed class SongQueueItem
@@ -13,6 +15,11 @@ public sealed class SongQueueItem
     public string? ThumbnailUrl { get; set; }
 
     public string? RequestedBy { get; set; }
+
+    public Guid? RequestedByUserId { get; set; }
+
+    [JsonIgnore]
+    public RadioUser? RequestedByUser { get; set; }
 
     public DateTimeOffset EnqueuedAt { get; set; }
 

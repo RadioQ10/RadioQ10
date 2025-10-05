@@ -8,7 +8,7 @@ public interface ISongQueueService
 
     SongQueueItem? Get(Guid id);
 
-    SongQueueItem Enqueue(string videoId, string title, string? channelTitle, string? thumbnailUrl, string? requestedBy);
+    SongQueueItem Enqueue(string videoId, string title, string? channelTitle, string? thumbnailUrl, Guid userId, string? requestedBy);
 
     bool Remove(Guid id);
 }
