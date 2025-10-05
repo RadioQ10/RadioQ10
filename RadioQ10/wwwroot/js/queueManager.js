@@ -85,12 +85,22 @@
     if (!details || !details.videoId || !details.title) {
       throw new Error('Faltan datos obligatorios para la canción.');
     }
+    const activeUser = window.radioUser;
+    if (!activeUser || !activeUser.id) {
+      throw new Error('Debes registrar tu nombre antes de agregar canciones.');
+    }
+
+    if (requestedByInput) {
+      requestedByInput.value = activeUser.name || '';
+    }
+
     const payload = {
       videoId: details.videoId,
       title: details.title,
       channelTitle: details.channelTitle ?? null,
       thumbnailUrl: details.thumbnailUrl ?? null,
-      requestedBy: (requestedByInput?.value || '').trim() || null
+      userId: activeUser.id,
+      requestedBy: activeUser.name || null
     };
 
     const response = await fetch('/api/music/queue', {

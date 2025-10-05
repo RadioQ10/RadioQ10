@@ -18,6 +18,9 @@ public sealed class AddSongRequest
     [Url]
     public string? ThumbnailUrl { get; set; }
 
+    [Required]
+    public Guid UserId { get; set; }
+
     [StringLength(64)]
     public string? RequestedBy { get; set; }
 }

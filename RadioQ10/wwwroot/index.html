@@ -177,8 +177,11 @@
                                         <input id="vid1Title" type="text" placeholder="Título de la canción" class="w-full rounded-2xl border border-orange-200/70 bg-white/90 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-200" />
                                     </label>
                                     <label class="flex flex-col gap-2 text-sm font-medium text-slate-600 flex-1">
-                                        <span>Solicitado por:</span>
-                                        <input id="requestedByInput" type="text" placeholder="Tu nombre (opcional)" class="w-full rounded-2xl border border-orange-200/70 bg-white/90 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-200" />
+                                        <span class="flex items-center justify-between">
+                                            <span>Solicitado por:</span>
+                                            <button id="changeUserButton" type="button" class="hidden text-xs font-semibold text-orange-500 transition hover:text-orange-600">Cambiar nombre</button>
+                                        </span>
+                                        <input id="requestedByInput" type="text" placeholder="Ingresa tu nombre para compartir canciones" class="w-full rounded-2xl border border-orange-200/70 bg-white/90 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-200" readonly />
                                     </label>
                                 </div>
                                 <div class="grid gap-3 sm:grid-cols-2">
@@ -254,6 +257,28 @@
         </div>
     </div>
 
+    <div id="userModalOverlay" class="fixed inset-0 z-40 hidden bg-slate-900/60 backdrop-blur-sm"></div>
+    <div id="userModal" class="fixed inset-0 z-50 hidden flex items-center justify-center px-4 sm:px-6">
+        <div class="w-full max-w-md rounded-3xl border border-orange-100 bg-white/95 p-6 shadow-xl shadow-orange-100/60">
+            <form id="userNameForm" class="space-y-5">
+                <div class="space-y-2 text-center">
+                    <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#ff7a1a] to-[#ff4d00] text-white shadow-lg shadow-orange-200/60">
+                        <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M6 6a4 4 0 118 0 4 4 0 01-8 0zM4 16a6 6 0 1112 0H4z" /></svg>
+                    </div>
+                    <h2 class="text-xl font-semibold text-slate-900">¿Cómo te llamas?</h2>
+                    <p class="text-sm text-slate-500">Necesitamos tu nombre para mostrarlo cuando agregues canciones a la cola compartida.</p>
+                </div>
+                <div class="space-y-2 text-left">
+                    <label for="userNameInput" class="text-sm font-medium text-slate-600">Tu nombre</label>
+                    <input id="userNameInput" type="text" maxlength="64" class="w-full rounded-2xl border border-orange-200/70 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-200" placeholder="p. ej. Ana, Juan, Equipo UX" required />
+                    <p id="userNameError" class="hidden text-xs text-red-500"></p>
+                </div>
+                <button id="userNameSubmit" type="submit" class="w-full rounded-2xl bg-gradient-to-r from-[#ff7a1a] to-[#ff5b00] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-200/60 transition hover:-translate-y-0.5 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-orange-200">Guardar nombre</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/userManager.js"></script>
     <script src="js/queueManager.js"></script>
     <script src="js/app.js"></script>
     <script src="js/buttonControls.js"></script>

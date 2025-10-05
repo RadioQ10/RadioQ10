@@ -28,6 +28,7 @@ builder.Services.AddDbContext<RadioDbContext>(options =>
 
 builder.Services.AddScoped<IRadioDbContext>(sp => sp.GetRequiredService<RadioDbContext>());
 builder.Services.AddScoped<ISongQueueService, SongQueueService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 var app = builder.Build();
 

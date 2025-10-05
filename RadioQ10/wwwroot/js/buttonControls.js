@@ -32,7 +32,12 @@
           });
         } catch (error) {
           console.error('No se pudo guardar la canción en la cola', error);
-          alert('Ocurrió un error al guardar la canción en la cola.');
+          const message = error instanceof Error ? error.message : '';
+          if (message && message.toLowerCase().includes('nombre')) {
+            alert(message);
+          } else {
+            alert('Ocurrió un error al guardar la canción en la cola.');
+          }
         }
       });
     }

@@ -51,8 +51,22 @@ public sealed class MusicController : ControllerBase
             return ValidationProblem(ModelState);
         }
 
-        var item = _songQueueService.Enqueue(request.VideoId, request.Title, request.ChannelTitle, request.ThumbnailUrl, request.RequestedBy);
-        return CreatedAtAction(nameof(GetQueueItem), new { id = item.Id }, item);
+        if (request.UserId == Guid.Empty)
+        {
+            ModelState.AddModelError(nameof(request.UserId), "El identificador de usuario es obligatorio.");
+            return ValidationProblem(ModelState);
+        }
+
+        try
+        {
+            var item = _songQueueService.Enqueue(request.VideoId, request.Title, request.ChannelTitle, request.ThumbnailUrl, request.UserId, request.RequestedBy);
+            return CreatedAtAction(nameof(GetQueueItem), new { id = item.Id }, item);
+        }
+        catch (ArgumentException ex)
+        {
+            ModelState.AddModelError(ex.ParamName ?? string.Empty, ex.Message);
+            return ValidationProblem(ModelState);
+        }
     }
 
     [HttpDelete("queue/{id:guid}")]
