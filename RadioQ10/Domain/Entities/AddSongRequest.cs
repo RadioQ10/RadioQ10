@@ -22,6 +22,6 @@ public sealed class AddSongRequest
     public Guid UserId { get; set; }
 
     [StringLength(64)]
-    public string? RequestedBy { get; set; }
+    public string RequestedBy { get; set; } = string.Empty;
 }
 
