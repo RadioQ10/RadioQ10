@@ -1,4 +1,4 @@
-namespace RadioQ10.Options;
+namespace RadioQ10.Infrastructure.Options;
 
 public sealed class YouTubeOptions
 {

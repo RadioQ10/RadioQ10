@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using RadioQ10.Models;
+using RadioQ10.Domain.Entities;
 
-namespace RadioQ10.Data;
+namespace RadioQ10.Infrastructure.Persistence;
 
 public interface IRadioDbContext
 {

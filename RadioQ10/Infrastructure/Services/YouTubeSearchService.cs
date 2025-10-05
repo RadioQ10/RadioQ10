@@ -1,9 +1,10 @@
 using System.Text.Json;
 using Microsoft.Extensions.Options;
-using RadioQ10.Models;
-using RadioQ10.Options;
+using RadioQ10.Application.Interfaces;
+using RadioQ10.Domain.Entities;
+using RadioQ10.Infrastructure.Options;
 
-namespace RadioQ10.Services;
+namespace RadioQ10.Infrastructure.Services;
 
 public sealed class YouTubeSearchService : IYouTubeSearchService
 {

@@ -1,6 +1,6 @@
-using RadioQ10.Models;
+using RadioQ10.Domain.Entities;
 
-namespace RadioQ10.Services;
+namespace RadioQ10.Application.Interfaces;
 
 public interface IYouTubeSearchService
 {
