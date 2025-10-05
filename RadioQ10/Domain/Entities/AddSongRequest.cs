@@ -18,7 +18,8 @@ public sealed class AddSongRequest
     [Url]
     public string? ThumbnailUrl { get; set; }
 
+    [Required]
     [StringLength(64)]
-    public string? RequestedBy { get; set; }
+    public string RequestedBy { get; set; } = string.Empty;
 }
 
