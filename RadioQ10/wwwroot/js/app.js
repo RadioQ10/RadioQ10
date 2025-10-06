@@ -89,6 +89,9 @@ connection.on("LoadVideos", (id1, startTimestamp, queueItemId) => {
   pendingSync = { id1, startTimestamp };
   tryStartSync();
 });
+connection.on("UpdateQueue", () => {
+    window.queueManager.fetchQueue();
+});
 
 function tryStartSync() {
   if (!pendingSync) return;

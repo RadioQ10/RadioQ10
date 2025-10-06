@@ -16,7 +16,13 @@ builder.Services.AddSwaggerGen();
 builder.Services.Configure<YouTubeOptions>(builder.Configuration.GetSection("YouTube"));
 builder.Services.AddHttpClient<IYouTubeSearchService, YouTubeSearchService>();
 
-var connectionString = builder.Configuration.GetConnectionString("RadioDatabase");
+var connectionString = string.Empty;
+#if QA
+connectionString = builder.Configuration.GetConnectionString("RadioDatabaseqa");
+#else
+connectionString = builder.Configuration.GetConnectionString("RadioDatabase");
+#endif
+
 if (string.IsNullOrWhiteSpace(connectionString))
 {
     throw new InvalidOperationException("Connection string 'RadioDatabase' is not configured.");
@@ -35,7 +41,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<RadioDbContext>();
-    db.Database.Migrate();
+    db.Database.EnsureCreated();
 }
 if (app.Environment.IsDevelopment())
 {

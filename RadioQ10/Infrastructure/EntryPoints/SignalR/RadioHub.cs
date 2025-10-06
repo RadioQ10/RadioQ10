@@ -33,6 +33,11 @@ public sealed class RadioHub : Hub
         await Clients.All.SendAsync("Pause");
     }
 
+    public async Task UpdateQueue()
+    {
+        await Clients.All.SendAsync("UpdateQueue");
+    }
+
     public async Task SeekPercent(int percent)
     {
         CurrentPercent = percent;
