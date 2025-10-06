@@ -151,7 +151,8 @@
     if (!response.ok && response.status !== 404) {
       const message = await response.text();
       throw new Error(message || `Estado ${response.status}`);
-    }
+      }
+     connection.invoke("UpdateQueue");
   }
 
   async function handleQueueSongEnded() {
@@ -167,8 +168,6 @@
           await removeQueueItemFromQueue(finishedId);
         } catch (error) {
           console.error('No se pudo eliminar la canción finalizada de la cola', error);
-        } finally {
-          fetchQueue();
         }
       } else {
         fetchQueue();
