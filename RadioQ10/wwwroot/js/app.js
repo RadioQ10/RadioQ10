@@ -259,12 +259,19 @@ async function setPercent(p) {
 }
 window.setPercent = setPercent;
 
-// botÃ³n de UI para porcentaje
-document.getElementById('seekPercentBtn').addEventListener('click', () => {
-  const val = document.getElementById('percent').value;
-  setPercent(val);
-  connection.invoke("SeekPercent", val);
-});
+// botÃ³n de UI para porcentaje (opcional, solo si existe en la vista)
+const seekPercentBtn = document.getElementById('seekPercentBtn');
+if (seekPercentBtn) {
+  seekPercentBtn.addEventListener('click', () => {
+    const percentInput = document.getElementById('percent');
+    const val = percentInput ? percentInput.value : undefined;
+    if (val == null) {
+      return;
+    }
+    setPercent(val);
+    connection.invoke('SeekPercent', val);
+  });
+}
 
 // Espera a que getDuration() sea confiable
 function ensureMetadata(player) {
