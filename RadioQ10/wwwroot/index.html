@@ -79,7 +79,7 @@
     </style>
 </head>
 <body class="bg-[#fff6ef] text-slate-900 antialiased">
-    <div class="relative min-h-screen overflow-hidden">
+    <div class="relative max-h-90dvh overflow-hidden">
         <div class="pointer-events-none absolute inset-0">
             <div class="absolute -top-32 -left-24 h-96 w-96 rounded-full bg-gradient-to-br from-[#ff9740] via-[#ff7d1a] to-[#ff6d00] opacity-30 blur-3xl"></div>
             <div class="absolute bottom-0 right-[-10%] h-[28rem] w-[28rem] rounded-full bg-gradient-to-br from-[#ffd4a1] via-white to-white opacity-70 blur-3xl"></div>
@@ -108,88 +108,10 @@
             </header>
 
             <main class="flex-1">
-                <section class="mx-auto grid w-full max-w-6xl gap-12 px-6 pb-16 pt-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-                    <div class="space-y-9">
-                        <span class="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-white/70 px-4 py-1 text-sm font-medium text-orange-500 shadow-sm">Sala JAM sincronizada</span>
-                        <div class="space-y-6">
-                            <h1 class="text-4xl font-semibold leading-tight text-slate-900 sm:text-5xl">Controla el ritmo de la JAM con Radio Q10</h1>
-                            <p class="max-w-xl text-base leading-relaxed text-slate-600">Carga un video de YouTube, comparte el enlace con tu equipo y mantengan todos la sesion sincronizada. Si alguien adelanta, pausa o busca, el resto del grupo lo vera al instante.</p>
-                        </div>
-                        <ul class="grid gap-4 text-sm text-slate-600 sm:grid-cols-2">
-                            <li class="flex items-start gap-3 rounded-2xl border border-orange-100 bg-white/80 p-4 shadow-sm">
-                                <span class="mt-1 h-2 w-2 rounded-full bg-gradient-to-br from-[#ff7a1a] to-[#ff4d00]"></span>
-                                <span>Sincronizacion basada en SignalR con controles compartidos para toda la sala.</span>
-                            </li>
-                            <li class="flex items-start gap-3 rounded-2xl border border-orange-100 bg-white/80 p-4 shadow-sm">
-                                <span class="mt-1 h-2 w-2 rounded-full bg-gradient-to-br from-[#ff7a1a] to-[#ff4d00]"></span>
-                                <span>Buscador de YouTube integrado para encontrar y lanzar la proxima pista.</span>
-                            </li>
-                            <li class="flex items-start gap-3 rounded-2xl border border-orange-100 bg-white/80 p-4 shadow-sm">
-                                <span class="mt-1 h-2 w-2 rounded-full bg-gradient-to-br from-[#ff7a1a] to-[#ff4d00]"></span>
-                                <span>Barra flotante con avance rapido, reinicio y progreso sincronizado.</span>
-                            </li>
-                            <li class="flex items-start gap-3 rounded-2xl border border-orange-100 bg-white/80 p-4 shadow-sm">
-                                <span class="mt-1 h-2 w-2 rounded-full bg-gradient-to-br from-[#ff7a1a] to-[#ff4d00]"></span>
-                                <span>Lista de reproduccion colaborativa: comparte el ID o el buscador y listo.</span>
-                            </li>
-                        </ul>
-
-                        <section class="queue-section">
-                            <h2 class="text-xl font-semibold text-slate-900 mb-4">Cola actual</h2>
-                            <div id="queueStatus" class="text-sm text-slate-500 mb-3">Cargando la cola...</div>
-                            <ul id="queueList" class="space-y-2"></ul>
-                        </section>
-                    </div>
-
-                    <div class="space-y-6">
-                        <div class="rounded-[2rem] border border-white/70 bg-slate-950/90 p-2 shadow-glow">
-                            <div class="relative overflow-hidden rounded-[1.6rem] border border-white/10 bg-slate-950">
-                                <div class="absolute -top-24 -right-16 h-52 w-52 rounded-full bg-gradient-to-br from-[#ff9a3d] via-[#ff6d00] to-[#ff4800] opacity-40 blur-3xl"></div>
-                                <div id="player1" class="relative aspect-video w-full bg-black"></div>
-                            </div>
-                            <div class="flex flex-col gap-1 rounded-[1.5rem] bg-slate-950/80 p-5 text-sm text-orange-50">
-                                <span class="text-xs uppercase tracking-[0.4em] text-orange-200/80">Ahora sonando</span>
-                                <a id="nowPlaying" href="#" target="_blank" rel="noopener" class="text-lg font-semibold text-white/60 underline-offset-4 hover:underline pointer-events-none">Sin video seleccionado</a>
-                                <p class="text-xs text-orange-200/70">El video que elijas se compartira con toda la sala automaticamente.</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <section class="mx-auto grid w-full max-w-6xl gap-8 px-6 pb-24 lg:grid-cols-[0.85fr_1.15fr]">
-                    <div class="rounded-[2rem] border border-orange-100/80 bg-white/80 p-8 shadow-xl shadow-orange-100/50">
-                        <div class="space-y-6">
-                            <div>
-                                <h2 class="text-2xl font-semibold text-slate-900">Panel de control</h2>
-                                <p class="text-sm text-slate-500">Comparte el <span class="font-semibold text-orange-500">videoId</span> o usa el buscador para mantener sincronizada la JAM.</p>
-                            </div>
-                            <div class="space-y-5">
-                                <label class="flex flex-col gap-2 text-sm font-medium text-slate-600">
-                                    <span>Video (videoId de YouTube)</span>
-                                    <div class="flex flex-col gap-3 sm:flex-row">
-                                        <input id="vid1" type="text" placeholder="p. ej. dQw4w9WgXcQ" class="w-full rounded-2xl border border-orange-200/70 bg-white/90 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-200" />
-                                        <button id="loadBtn" class="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-[#ff7a1a] to-[#ff5b00] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-200/60 transition hover:shadow-xl focus:outline-none">Sincronizar grupo</button>
-                                    </div>
-                                </label>
-                                <div class="flex flex-col gap-3 sm:flex-row">
-                                    <label class="flex flex-col gap-2 text-sm font-medium text-slate-600 flex-1">
-                                        <span>Título:</span>
-                                        <input id="vid1Title" type="text" placeholder="Título de la canción" class="w-full rounded-2xl border border-orange-200/70 bg-white/90 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-200" />
-                                    </label>
-                                    <label class="flex flex-col gap-2 text-sm font-medium text-slate-600 flex-1">
-                                        <span class="flex items-center justify-between">
-                                            <span>Solicitado por:</span>
-                                            <button id="changeUserButton" type="button" class="hidden text-xs font-semibold text-orange-500 transition hover:text-orange-600">Cambiar nombre</button>
-                                        </span>
-                                        <input id="requestedByInput" type="text" placeholder="Ingresa tu nombre para compartir canciones" class="w-full rounded-2xl border border-orange-200/70 bg-white/90 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-200" readonly />
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <section class="mx-auto grid w-full max-w-6xl gap-12 px-6 pb-6 pt-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-t">
 
                     <div class="rounded-[2rem] border border-orange-100/80 bg-white/85 p-8 shadow-xl shadow-orange-100/40">
-                        <div class="space-y-6">
+                        <div class="space-y-9">
                             <div class="flex flex-col gap-2">
                                 <h2 class="text-2xl font-semibold text-slate-900">Explorar en YouTube</h2>
                                 <p class="text-sm text-slate-500">Busca contenido sin salir de la sala. Selecciona un resultado para compartirlo con todos.</p>
@@ -208,6 +130,32 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="space-y-6">
+                        <div class="rounded-[2rem] border border-white/70 bg-slate-950/90 p-2 shadow-glow">
+                            <div class="relative overflow-hidden rounded-[1.6rem] border border-white/10 bg-slate-950">
+                                <div class="absolute -top-24 -right-16 h-52 w-52 rounded-full bg-gradient-to-br from-[#ff9a3d] via-[#ff6d00] to-[#ff4800] opacity-40 blur-3xl"></div>
+                                <div id="player1" class="relative aspect-video w-full bg-black"></div>
+                            </div>
+                            <div class="flex flex-col gap-1 rounded-[1.5rem] bg-slate-950/80 p-5 text-sm text-orange-50">
+                                <span class="text-xs uppercase tracking-[0.4em] text-orange-200/80">Ahora sonando</span>
+                                <a id="nowPlaying" href="#" target="_blank" rel="noopener" class="text-lg font-semibold text-white/60 underline-offset-4 hover:underline pointer-events-none">Sin video seleccionado</a>
+                                <p class="text-xs text-orange-200/70">El video que elijas se compartira con toda la sala automaticamente.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="mx-auto grid w-full max-w-6xl gap-12 px-6 pb-6 pt-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+
+                    <div class="space-y-9">
+                        <section class="queue-section">
+                            <h2 class="text-xl font-semibold text-slate-900 mb-4">Cola actual</h2>
+                            <div id="queueStatus" class="text-sm text-slate-500 mb-3">Cargando la cola...</div>
+                            <ul id="queueList" class="space-y-2"></ul>
+                        </section>
+                    </div>
+
                 </section>
             </main>
         </div>
@@ -244,6 +192,8 @@
     </div>
 
     <div id="userModalOverlay" class="fixed inset-0 z-40 hidden bg-slate-900/60 backdrop-blur-sm"></div>
+    
+    
     <div id="userModal" class="fixed inset-0 z-50 hidden flex items-center justify-center px-4 sm:px-6">
         <div class="w-full max-w-md rounded-3xl border border-orange-100 bg-white/95 p-6 shadow-xl shadow-orange-100/60">
             <form id="userNameForm" class="space-y-5">
