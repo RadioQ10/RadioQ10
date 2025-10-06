@@ -42,7 +42,7 @@
       });
     }
 
-    const API_KEY = 'AIzaSyCeSDqbhZ2ozXjfmgdKHfW5wCFbBaibMr0';
+      const API_KEY = 'AIzaSyBvdmKbuvuACbaf95KHSrDkfj8A2HcSNOM';
     const searchBtn = document.getElementById('searchBtn');
     if (searchBtn) {
       searchBtn.addEventListener('click', async () => {
