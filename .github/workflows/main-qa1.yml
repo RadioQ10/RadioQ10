@@ -40,18 +40,18 @@ jobs:
           dotnet-version: '9.0.x'
 
       - name: Clean
-        run: dotnet clean "$PROJECT_PATH" -c Release
+        run: dotnet clean "$PROJECT_PATH" -c QA
 
       - name: Restore (runtime win-x86)
         run: dotnet restore "$PROJECT_PATH" -r win-x86
 
       - name: Build (Release, net9.0, win-x86)
-        run: dotnet build "$PROJECT_PATH" -c Release -f net9.0 -r win-x86 --no-restore
+        run: dotnet build "$PROJECT_PATH" -c QA -f net9.0 -r win-x86 --no-restore
 
       - name: Publish (net9.0 | win-x86 | framework-dependent)
         run: |
           dotnet publish "$PROJECT_PATH" \
-            --configuration Release \
+            --configuration QA \
             --framework net9.0 \
             --self-contained false \
             -p:PublishSingleFile=false \
