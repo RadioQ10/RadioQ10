@@ -115,7 +115,7 @@
     }
 
     const item = await response.json();
-    await fetchQueue();
+      connection.invoke("UpdateQueue");
     return item;
   }
 
