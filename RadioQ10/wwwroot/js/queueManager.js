@@ -17,6 +17,8 @@
         throw new Error(`Estado ${response.status}`);
       }
       const items = await response.json();
+      // Mantener copia accesible globalmente para Now Playing
+      try { window.__queueItems = items; } catch {}
       renderQueue(items);
     } catch (error) {
       console.error('Error al obtener la cola', error);
@@ -77,7 +79,104 @@
       li.appendChild(thumb);
       li.appendChild(body);
 
+      // Acciones (botón naranja para eliminar)
+  const actions = document.createElement('div');
+  actions.className = 'ml-auto relative flex items-center gap-2';
+  actions.appendChild(createOrangeRemoveButton(item, li));
+      li.appendChild(actions);
+
       queueListEl.appendChild(li);
+    });
+  }
+
+  // Crea el botón "naranja" para eliminar un item de la cola
+  function createOrangeRemoveButton(item, containerEl) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.title = 'Eliminar de la cola';
+    btn.setAttribute('aria-label', 'Eliminar de la cola');
+    btn.className = 'inline-flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#ff7a1a] to-[#ff4d00] text-white shadow-md transition-all duration-300 hover:shadow-lg hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-orange-200';
+    btn.innerHTML = '<svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2h.293l.853 10.236A2 2 0 007.139 18h5.722a2 2 0 001.993-1.764L15.707 6H16a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM8 8a1 1 0 112 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 112 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd"/></svg>';
+
+    let busy = false;
+    btn.addEventListener('click', async (ev) => {
+      if (busy) return;
+      try {
+        busy = true;
+        // 1) Animación de partículas
+        triggerExplosion(containerEl, ev);
+        // 2) Colapso suave del contenedor
+        await collapseElement(containerEl);
+        // 3) Llamar backend y luego refrescar lista
+        await removeQueueItemFromQueue(item.id);
+        await fetchQueue();
+      } catch (error) {
+        console.error('No se pudo eliminar el elemento de la cola', error);
+        // Si falla, revertimos colapso visual volviendo a mostrar el elemento
+        try { containerEl.style.display = ''; containerEl.style.height = ''; } catch {}
+      } finally {
+        busy = false;
+      }
+    });
+
+    return btn;
+  }
+
+  // Animación de explosión con partículas naranjas
+  function triggerExplosion(containerEl, ev) {
+    try {
+      const rect = containerEl.getBoundingClientRect();
+      const originX = (ev?.clientX ?? (rect.left + rect.width / 2)) - rect.left;
+      const originY = (ev?.clientY ?? (rect.top + rect.height / 2)) - rect.top;
+      const particles = 12;
+      containerEl.style.position = containerEl.style.position || 'relative';
+      for (let i = 0; i < particles; i++) {
+        const p = document.createElement('span');
+        p.className = 'q10-particle';
+        const size = 4 + Math.random() * 8; // 4-12px
+        p.style.width = `${size}px`;
+        p.style.height = `${size}px`;
+        p.style.left = `${originX}px`;
+        p.style.top = `${originY}px`;
+        containerEl.appendChild(p);
+
+        const angle = (Math.PI * 2 * i) / particles + Math.random() * 0.6;
+        const radius = 40 + Math.random() * 60; // distancia de viaje
+        const tx = Math.cos(angle) * radius;
+        const ty = Math.sin(angle) * radius;
+        requestAnimationFrame(() => {
+          p.style.transform = `translate(${tx}px, ${ty}px) rotate(${Math.random()*180}deg)`;
+          p.style.opacity = '0';
+        });
+        setTimeout(() => p.remove(), 750);
+      }
+      containerEl.classList.add('q10-exploding');
+      setTimeout(() => containerEl.classList.remove('q10-exploding'), 300);
+    } catch {}
+  }
+
+  // Colapsa el elemento con una transición suave de altura
+  function collapseElement(el) {
+    return new Promise((resolve) => {
+      try {
+        const h = el.offsetHeight;
+        el.classList.add('q10-collapsing');
+        el.style.height = h + 'px';
+        // Forzar reflow
+        void el.offsetHeight;
+        el.style.height = '0px';
+        el.style.marginTop = '0px';
+        el.style.marginBottom = '0px';
+        el.style.paddingTop = '0px';
+        el.style.paddingBottom = '0px';
+        el.style.borderWidth = '0px';
+        setTimeout(() => {
+          el.style.display = 'none';
+          resolve();
+        }, 430);
+      } catch {
+        resolve();
+      }
     });
   }
 
