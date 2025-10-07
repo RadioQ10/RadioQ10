@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using RadioQ10.Application.Interfaces;
 using RadioQ10.Domain.Entities;
+using System.Threading.Tasks;
 
 namespace RadioQ10.Infrastructure.EntryPoints.Web.Controllers;
 
@@ -44,7 +45,7 @@ public sealed class MusicController : ControllerBase
     }
 
     [HttpPost("queue")]
-    public ActionResult<SongQueueItem> Enqueue([FromBody] AddSongRequest request)
+    public async Task<ActionResult> Enqueue([FromBody] AddSongRequest request)
     {
         if (!ModelState.IsValid)
         {
@@ -59,7 +60,11 @@ public sealed class MusicController : ControllerBase
 
         try
         {
-            var item = _songQueueService.Enqueue(request.VideoId, request.Title, request.ChannelTitle, request.ThumbnailUrl, request.UserId, request.RequestedBy);
+            var item = await _songQueueService.Enqueue(request.VideoId, request.Title, request.ChannelTitle, request.ThumbnailUrl, request.UserId, request.RequestedBy);
+            if(item is null)
+            {
+                return Conflict();
+            }
             return CreatedAtAction(nameof(GetQueueItem), new { id = item.Id }, item);
         }
         catch (ArgumentException ex)
