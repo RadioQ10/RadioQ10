@@ -1,5 +1,5 @@
 (function initializeUserManager() {
-  window.radioUser = window.radioUser ?? null;
+    window.radioUser = window.radioUser ?? null;
   const modal = document.getElementById('userModal');
   const modalOverlay = document.getElementById('userModalOverlay');
   const nameForm = document.getElementById('userNameForm');
@@ -7,7 +7,11 @@
   const nameError = document.getElementById('userNameError');
   const saveButton = document.getElementById('userNameSubmit');
   const changeUserButton = document.getElementById('changeUserButton');
-  const requestedByInput = document.getElementById('requestedByInput');
+    const requestedByInput = document.getElementById('requestedByInput');
+
+
+    const queueListEl = document.getElementById('userList');
+    const queueStatusEl = document.getElementById('userStatus');
 
   const storageKey = 'radioUser';
 
@@ -51,7 +55,8 @@
   function persistUser(user) {
     window.radioUser = user;
     try {
-      localStorage.setItem(storageKey, JSON.stringify(user));
+        localStorage.setItem(storageKey, JSON.stringify(user));
+        connection.invoke("UserInfo", user.name);
     } catch (error) {
       console.warn('No se pudo guardar el usuario en el almacenamiento local.', error);
     }
@@ -70,7 +75,57 @@
       console.error('No se pudo validar el usuario almacenado.', error);
       return null;
     }
-  }
+    }
+
+    async function fetchUsers() {
+        try {
+            const response = await fetch(`/api/users/actuals`);
+            if (!response.ok) {
+                return null;
+            }
+
+            let data = await response.json();
+            console.log(data);
+            renderUser(data);
+
+
+        } catch (error) {
+            console.error('No se pudo validar el usuario almacenado.', error);
+            return null;
+        }
+    }
+
+    function renderUser(items) {
+        if (!queueListEl || !queueStatusEl) {
+            return;
+        }
+        queueListEl.innerHTML = '';
+        if (!Array.isArray(items) || items.length === 0) {
+            queueStatusEl.textContent = 'No hay usuarios actuales.';
+            queueListEl.innerHTML = '<div class="rounded-2xl border border-dashed border-orange-200 bg-orange-50/50 px-5 py-6 text-center text-sm text-orange-500">No hay usuarios.</div>';
+            return;
+        }
+        queueStatusEl.textContent = `Usuarios actuales: ${items.length}`;
+        items.forEach((item, index) => {
+            const li = document.createElement('li');
+            li.className = 'group flex items-center gap-4 rounded-2xl border border-orange-100 bg-white/80 p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-orange-100/50 animate-fade-in';
+            li.style.animationDelay = `${index * 100}ms`;
+
+            const body = document.createElement('div');
+            body.className = 'flex-1 space-y-1';
+
+            const title = document.createElement('div');
+            title.className = 'text-sm font-semibold text-slate-800 group-hover:text-orange-600 transition-colors duration-300 line-clamp-2';
+            title.textContent = item;
+            body.appendChild(title);
+
+            li.appendChild(body);
+
+            queueListEl.appendChild(li);
+        });
+    }
+
+
 
   function clearStoredUser() {
     window.radioUser = null;
@@ -166,6 +221,10 @@
     }
     hideModal();
   });
+
+    window.userManager = {
+       fetchUsers
+    };
 
   initialize();
 })();

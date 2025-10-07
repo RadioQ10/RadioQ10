@@ -29,14 +29,19 @@ public sealed class SongQueueService : ISongQueueService
             .FirstOrDefault(item => item.Id == id);
     }
 
-    public SongQueueItem Enqueue(string videoId, string title, string? channelTitle, string? thumbnailUrl, Guid userId, string? requestedBy)
+    public async Task<SongQueueItem> Enqueue(string videoId, string title, string? channelTitle, string? thumbnailUrl, Guid userId, string? requestedBy)
     {
         var user = _dbContext.Users
             .AsNoTracking()
-            .FirstOrDefault(u => u.Id == userId);
-        if (user is null)
+            .FirstOrDefault(u => u.Id == userId) ?? throw new ArgumentException("El usuario especificado no existe.", nameof(userId));
+
+        var any = (from q in _dbContext.SongQueue
+                   where q.VideoId == videoId
+                   select q).Any();
+
+        if (any)
         {
-            throw new ArgumentException("El usuario especificado no existe.", nameof(userId));
+            return null;
         }
 
         var item = new SongQueueItem

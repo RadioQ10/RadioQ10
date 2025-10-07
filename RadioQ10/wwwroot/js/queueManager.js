@@ -110,8 +110,9 @@
     });
 
     if (!response.ok) {
-      const message = await response.text();
-      throw new Error(message || 'No se pudo guardar la canción.');
+        const message = await response.text();
+        alert("La canción no pudo ser agregada a la cola");
+        return;
     }
 
     const item = await response.json();
@@ -120,7 +121,7 @@
   }
 
   async function playOldestSongFromQueue() {
-    try {
+      try {
       const response = await fetch('/api/music/queue');
       if (!response.ok) {
         throw new Error(`Estado ${response.status}`);
@@ -150,7 +151,6 @@
     const response = await fetch(`/api/music/queue/${queueItemId}`, { method: 'DELETE' });
     if (!response.ok && response.status !== 404) {
       const message = await response.text();
-      throw new Error(message || `Estado ${response.status}`);
       }
      connection.invoke("UpdateQueue");
   }
