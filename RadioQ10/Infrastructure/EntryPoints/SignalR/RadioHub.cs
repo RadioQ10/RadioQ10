@@ -33,6 +33,7 @@ public sealed class RadioHub : Hub
             UsersActuals[user] = [Context.ConnectionId];
         }
 
+        await Clients.All.SendAsync("UserCount", UsersActuals.Count);
         await Clients.All.SendAsync("UserListUpdate");
     }
 
@@ -54,6 +55,7 @@ public sealed class RadioHub : Hub
         }
 
         await Clients.All.SendAsync("UserListUpdate");
+        await Clients.All.SendAsync("UserCount", UsersActuals.Count);
         await base.OnDisconnectedAsync(exception);
     }
 
@@ -106,5 +108,10 @@ public sealed class RadioHub : Hub
             throw new ArgumentException("Room cannot be empty.", nameof(room));
         }
         await Clients.Group(room).SendAsync("ReceiveNumber", number);
+    }
+
+    public Task<int> GetUserCount()
+    {
+        return Task.FromResult(UsersActuals.Count);
     }
 }

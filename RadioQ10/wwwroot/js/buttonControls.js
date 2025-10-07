@@ -42,32 +42,32 @@
             });
         }
 
-        const searchBtn = document.getElementById('searchBtn');
-
-        if (searchBtn) {
-            searchBtn.addEventListener('click', async () => {
-                const query = document.getElementById('searchQuery').value.trim();
-                if (!query) {
-                    return;
-                }
-
-                const url = `/api/music/search?query=${encodeURIComponent(query)}`;
-                try {
-                    const res = await fetch(url);
-                    const data = await res.json();
-                    const results = (data || []).map(item => ({
-                        id: item.videoId,
-                        title: item.title ?? '',
-                        channelTitle: item.channelTitle ?? '',
-                        thumbnail: item.thumbnailUrl
-                            || (item.videoId ? `https://img.youtube.com/vi/${item.videoId}/default.jpg` : '')
-                    })).filter(video => video.id && video.title);
-                    radioApp.renderSearchResults(results);
-                } catch (error) {
-                    console.error('No se pudo realizar la búsqueda en YouTube', error);
-                }
-            });
+      const API_KEY = 'AIzaSyBvdmKbuvuACbaf95KHSrDkfj8A2HcSNOM';
+    const searchBtn = document.getElementById('searchBtn');
+    if (searchBtn) {
+      searchBtn.addEventListener('click', async () => {
+        const query = document.getElementById('searchQuery').value.trim();
+        if (!query) {
+          return;
         }
+        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=8&q=${encodeURIComponent(query)}&key=${API_KEY}`;
+        try {
+          const res = await fetch(url);
+          const data = await res.json();
+          const results = (data.items || []).map(item => ({
+            id: item.id?.videoId,
+            title: item.snippet?.title ?? '',
+            channelTitle: item.snippet?.channelTitle ?? '',
+            thumbnail: item.snippet?.thumbnails?.medium?.url
+              || item.snippet?.thumbnails?.default?.url
+              || (item.id?.videoId ? `https://img.youtube.com/vi/${item.id.videoId}/default.jpg` : '')
+          })).filter(video => video.id && video.title);
+          radioApp.renderSearchResults(results);
+        } catch (error) {
+          console.error('No se pudo realizar la búsqueda en YouTube', error);
+        }
+      });
+    }
 
         const playBtn = document.getElementById('playBtn');
         if (playBtn) {

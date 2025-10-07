@@ -198,7 +198,8 @@
       const verifiedUser = await fetchUser(storedUser.id);
       if (verifiedUser) {
         persistUser(verifiedUser);
-        hideModal();
+          hideModal();
+          connection.invoke("UserInfo", verifiedUser.name);
         return;
       }
       clearStoredUser();
