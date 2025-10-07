@@ -11,12 +11,9 @@ public sealed class RadioHub : Hub
     private static bool IsPlaying = false;
     private static Guid? CurrentQueueItemId;
     public static Dictionary<string, List<string>> UsersActuals = new();
-    private static int ConnectionCount = 0;
 
     public override async Task OnConnectedAsync()
     {
-        Interlocked.Increment(ref ConnectionCount);
-        await Clients.All.SendAsync("UserCount", ConnectionCount);
         // Envía el estado actual al nuevo cliente
         if (!string.IsNullOrEmpty(CurrentVideoId) && CurrentStartTimestamp.HasValue)
         {
@@ -36,6 +33,7 @@ public sealed class RadioHub : Hub
             UsersActuals[user] = [Context.ConnectionId];
         }
 
+        await Clients.All.SendAsync("UserCount", UsersActuals.Count);
         await Clients.All.SendAsync("UserListUpdate");
     }
 
@@ -57,13 +55,7 @@ public sealed class RadioHub : Hub
         }
 
         await Clients.All.SendAsync("UserListUpdate");
-        await base.OnDisconnectedAsync(exception);
-    }
-
-    public override async Task OnDisconnectedAsync(Exception? exception)
-    {
-        Interlocked.Decrement(ref ConnectionCount);
-        await Clients.All.SendAsync("UserCount", ConnectionCount);
+        await Clients.All.SendAsync("UserCount", UsersActuals.Count);
         await base.OnDisconnectedAsync(exception);
     }
 
@@ -120,6 +112,6 @@ public sealed class RadioHub : Hub
 
     public Task<int> GetUserCount()
     {
-        return Task.FromResult(ConnectionCount);
+        return Task.FromResult(UsersActuals.Count);
     }
 }

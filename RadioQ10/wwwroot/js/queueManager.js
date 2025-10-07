@@ -209,8 +209,9 @@
     });
 
     if (!response.ok) {
-      const message = await response.text();
-      throw new Error(message || 'No se pudo guardar la canción.');
+        const message = await response.text();
+        alert("La canción no pudo ser agregada a la cola");
+        return;
     }
 
     const item = await response.json();
