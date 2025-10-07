@@ -10,6 +10,7 @@ public sealed class RadioHub : Hub
     private static int CurrentPercent = 0;
     private static bool IsPlaying = false;
     private static Guid? CurrentQueueItemId;
+    public static Dictionary<string, List<string>> UsersActuals = new();
     private static int ConnectionCount = 0;
 
     public override async Task OnConnectedAsync()
@@ -22,6 +23,41 @@ public sealed class RadioHub : Hub
             await Clients.Caller.SendAsync("SyncState", CurrentVideoId, CurrentStartTimestamp.Value, CurrentPercent, IsPlaying, CurrentQueueItemId);
         }
         await base.OnConnectedAsync();
+    }
+
+    public async Task UserInfo(string user)
+    {
+        if (UsersActuals.TryGetValue(user, out var value))
+        {
+            value.Add(Context.ConnectionId);
+        }
+        else
+        {
+            UsersActuals[user] = [Context.ConnectionId];
+        }
+
+        await Clients.All.SendAsync("UserListUpdate");
+    }
+
+    public override async Task OnDisconnectedAsync(Exception? exception)
+    {
+        var actualUser = UsersActuals.FirstOrDefault(x => x.Value.Contains(Context.ConnectionId));
+
+        if (actualUser.Key is null || actualUser.Value is null)
+        {
+            await base.OnDisconnectedAsync(exception);
+            return;
+        }
+
+        actualUser.Value.Remove(Context.ConnectionId);
+
+        if (actualUser.Value.Count == 0)
+        {
+            UsersActuals.Remove(actualUser.Key);
+        }
+
+        await Clients.All.SendAsync("UserListUpdate");
+        await base.OnDisconnectedAsync(exception);
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)

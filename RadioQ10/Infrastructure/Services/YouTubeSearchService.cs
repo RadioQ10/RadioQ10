@@ -30,6 +30,10 @@ public sealed class YouTubeSearchService : IYouTubeSearchService
         }
 
         var requestUri = BuildRequestUri(query, _options.MaxResults);
+
+        if (_httpClient.DefaultRequestHeaders.Contains("Authorization"))
+            _httpClient.DefaultRequestHeaders.Remove("Authorization");
+
         using var response = await _httpClient.GetAsync(requestUri, cancellationToken);
         response.EnsureSuccessStatusCode();
 

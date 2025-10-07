@@ -219,7 +219,7 @@
   }
 
   async function playOldestSongFromQueue() {
-    try {
+      try {
       const response = await fetch('/api/music/queue');
       if (!response.ok) {
         throw new Error(`Estado ${response.status}`);
@@ -249,7 +249,6 @@
     const response = await fetch(`/api/music/queue/${queueItemId}`, { method: 'DELETE' });
     if (!response.ok && response.status !== 404) {
       const message = await response.text();
-      throw new Error(message || `Estado ${response.status}`);
       }
      connection.invoke("UpdateQueue");
   }

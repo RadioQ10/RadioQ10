@@ -128,6 +128,11 @@ connection.on("LoadVideos", (id1, startTimestamp, queueItemId) => {
 connection.on("UpdateQueue", () => {
     window.queueManager.fetchQueue();
 });
+connection.on("UserListUpdate", () => {
+    console.log("Arribando");
+    window.userManager.fetchUsers();
+});
+
 
 // --- Conteo de usuarios ---
 connection.on('UserCount', (count) => {
