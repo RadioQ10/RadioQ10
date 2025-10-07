@@ -10,15 +10,25 @@ public sealed class RadioHub : Hub
     private static int CurrentPercent = 0;
     private static bool IsPlaying = false;
     private static Guid? CurrentQueueItemId;
+    private static int ConnectionCount = 0;
 
     public override async Task OnConnectedAsync()
     {
+        Interlocked.Increment(ref ConnectionCount);
+        await Clients.All.SendAsync("UserCount", ConnectionCount);
         // Envía el estado actual al nuevo cliente
         if (!string.IsNullOrEmpty(CurrentVideoId) && CurrentStartTimestamp.HasValue)
         {
             await Clients.Caller.SendAsync("SyncState", CurrentVideoId, CurrentStartTimestamp.Value, CurrentPercent, IsPlaying, CurrentQueueItemId);
         }
         await base.OnConnectedAsync();
+    }
+
+    public override async Task OnDisconnectedAsync(Exception? exception)
+    {
+        Interlocked.Decrement(ref ConnectionCount);
+        await Clients.All.SendAsync("UserCount", ConnectionCount);
+        await base.OnDisconnectedAsync(exception);
     }
 
     public async Task Play()
@@ -70,5 +80,10 @@ public sealed class RadioHub : Hub
             throw new ArgumentException("Room cannot be empty.", nameof(room));
         }
         await Clients.Group(room).SendAsync("ReceiveNumber", number);
+    }
+
+    public Task<int> GetUserCount()
+    {
+        return Task.FromResult(ConnectionCount);
     }
 }

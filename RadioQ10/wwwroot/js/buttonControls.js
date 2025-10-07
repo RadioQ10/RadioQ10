@@ -43,30 +43,54 @@
     }
 
       const API_KEY = 'AIzaSyBvdmKbuvuACbaf95KHSrDkfj8A2HcSNOM';
-    const searchBtn = document.getElementById('searchBtn');
+  const searchBtn = document.getElementById('searchBtn');
+    const searchInput = document.getElementById('searchQuery');
+  const searchForm = document.getElementById('searchForm');
+
+    async function performSearch() {
+      const query = (searchInput?.value || '').trim();
+      if (!query) return;
+      const resultsContainer = document.getElementById('searchResults');
+      if (resultsContainer) {
+        resultsContainer.innerHTML = '<div class="rounded-2xl border border-dashed border-orange-200 bg-orange-50/50 px-5 py-6 text-center text-sm text-orange-500">Buscando…</div>';
+      }
+      const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=8&q=${encodeURIComponent(query)}&key=${API_KEY}`;
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        const results = (data.items || []).map(item => ({
+          id: item.id?.videoId,
+          title: item.snippet?.title ?? '',
+          channelTitle: item.snippet?.channelTitle ?? '',
+          thumbnail: item.snippet?.thumbnails?.medium?.url
+            || item.snippet?.thumbnails?.default?.url
+            || (item.id?.videoId ? `https://img.youtube.com/vi/${item.id.videoId}/default.jpg` : '')
+        })).filter(video => video.id && video.title);
+        radioApp.renderSearchResults(results);
+      } catch (error) {
+        console.error('No se pudo realizar la búsqueda en YouTube', error);
+      }
+    }
+
     if (searchBtn) {
-      searchBtn.addEventListener('click', async () => {
-        const query = document.getElementById('searchQuery').value.trim();
-        if (!query) {
-          return;
-        }
-        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=8&q=${encodeURIComponent(query)}&key=${API_KEY}`;
-        try {
-          const res = await fetch(url);
-          const data = await res.json();
-          const results = (data.items || []).map(item => ({
-            id: item.id?.videoId,
-            title: item.snippet?.title ?? '',
-            channelTitle: item.snippet?.channelTitle ?? '',
-            thumbnail: item.snippet?.thumbnails?.medium?.url
-              || item.snippet?.thumbnails?.default?.url
-              || (item.id?.videoId ? `https://img.youtube.com/vi/${item.id.videoId}/default.jpg` : '')
-          })).filter(video => video.id && video.title);
-          radioApp.renderSearchResults(results);
-        } catch (error) {
-          console.error('No se pudo realizar la búsqueda en YouTube', error);
-        }
+      searchBtn.addEventListener('click', performSearch);
+    }
+    if (searchForm) {
+      searchForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        performSearch();
       });
+    }
+    if (searchInput) {
+      const tryEnter = (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          performSearch();
+        }
+      };
+      searchInput.addEventListener('keydown', tryEnter);
+      searchInput.addEventListener('keyup', tryEnter);
+      searchInput.addEventListener('keypress', tryEnter);
     }
 
     const playBtn = document.getElementById('playBtn');

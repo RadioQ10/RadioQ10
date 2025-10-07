@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet" integrity="sha512-1ycn6IcaQQ40/J6MdG8m6VZ8VQm2v1Z9ZC2V1p+FhF4t3vD2f1lZLwG0sEwQf6W3Y0G1w3Jf9Jk4Z1a2w3QZ1A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
      <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -76,6 +77,54 @@
             transition-property: all;
             transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
         }
+        /* Shimmer para el texto del Now Playing */
+        .text-shimmer {
+            background: linear-gradient(90deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.95) 50%, rgba(255,255,255,0.6) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            background-size: 200% 100%;
+            animation: shimmer-move 2.8s linear infinite;
+        }
+        @keyframes shimmer-move {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        /* Ecualizador minimalista */
+        .eq {
+            display: inline-flex;
+            gap: 4px;
+            align-items: flex-end;
+            height: 14px;
+        }
+        .eq .bar {
+            width: 3px;
+            background: #ff7a1a;
+            border-radius: 2px;
+            opacity: .9;
+            height: 6px;
+        }
+        .eq.playing .bar { animation: equalize 900ms ease-in-out infinite; }
+        .eq.playing .bar:nth-child(2) { animation-delay: 150ms; }
+        .eq.playing .bar:nth-child(3) { animation-delay: 300ms; }
+        .eq.playing .bar:nth-child(4) { animation-delay: 450ms; }
+        @keyframes equalize {
+            0%, 100% { height: 6px; }
+            50% { height: 14px; }
+        }
+        /* Partículas para la animación de explosión al eliminar de la cola */
+        .q10-particle {
+            position: absolute;
+            pointer-events: none;
+            background: linear-gradient(135deg, #ff9a3d, #ff6d00, #ff4800);
+            border-radius: 2px;
+            opacity: 0.95;
+            will-change: transform, opacity;
+            box-shadow: 0 2px 6px rgba(255, 109, 0, 0.35);
+            transition: transform 700ms cubic-bezier(.2,.8,.2,1), opacity 700ms ease;
+        }
+        .q10-exploding { transform: scale(0.92); opacity: 0; filter: blur(2px); }
+        .q10-collapsing { overflow: hidden !important; transition: height 420ms ease, margin 420ms ease, padding 420ms ease, border-width 420ms ease; }
     </style>
 </head>
 <body class="bg-[#fff6ef] text-slate-900 antialiased">
@@ -102,7 +151,7 @@
                         <span class="text-slate-400">YouTube + SignalR</span>
                     </div>
                     <div class="flex items-center gap-3">
-                        <span id="connectionStatus" class="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-600 shadow-sm"><span class="text-base leading-none">&#9679;</span><span>Conectando...</span></span>
+                        <span id="connectionStatus" class="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-600 shadow-sm"><span id="connectionDot" class="text-base leading-none">&#9679;</span><span id="connectionText">Conectando...</span></span>
                     </div>
                 </nav>
             </header>
@@ -117,13 +166,13 @@
                                 <p class="text-sm text-slate-500">Busca contenido sin salir de la sala. Selecciona un resultado para compartirlo con todos.</p>
                             </div>
                             <div class="flex flex-col gap-4">
-                                <div class="flex flex-col gap-3 md:flex-row">
+                                <form id="searchForm" class="flex flex-col gap-3 md:flex-row" action="#">
                                     <div class="relative flex-1">
                                         <input id="searchQuery" type="text" placeholder="Busca cursos, playlists o sesiones en vivo..." class="w-full rounded-2xl border border-orange-200/70 bg-white/95 px-4 py-3 text-sm text-slate-700 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-200" />
                                         <span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xs font-medium uppercase tracking-[0.3em] text-orange-300">Q10</span>
                                     </div>
-                                    <button id="searchBtn" class="inline-flex items-center justify-center rounded-2xl border border-transparent bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-400/50 transition hover:-translate-y-0.5 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-orange-200">Buscar</button>
-                                </div>
+                                    <button id="searchBtn" type="submit" class="inline-flex items-center justify-center rounded-2xl border border-transparent bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-400/50 transition hover:-translate-y-0.5 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-orange-200">Buscar</button>
+                                </form>
                                 <div id="searchResults" class="grid max-h-96 gap-3 overflow-y-auto pr-1" role="list">
                                     <div class="rounded-2xl border border-dashed border-orange-200 bg-orange-50/50 px-5 py-6 text-center text-sm text-orange-500">Busca un termino para ver sugerencias y sincronizarlas con tu equipo.</div>
                                 </div>
@@ -137,9 +186,19 @@
                                 <div class="absolute -top-24 -right-16 h-52 w-52 rounded-full bg-gradient-to-br from-[#ff9a3d] via-[#ff6d00] to-[#ff4800] opacity-40 blur-3xl"></div>
                                 <div id="player1" class="relative aspect-video w-full bg-black"></div>
                             </div>
-                            <div class="flex flex-col gap-1 rounded-[1.5rem] bg-slate-950/80 p-5 text-sm text-orange-50">
-                                <span class="text-xs uppercase tracking-[0.4em] text-orange-200/80">Ahora sonando</span>
-                                <a id="nowPlaying" href="#" target="_blank" rel="noopener" class="text-lg font-semibold text-white/60 underline-offset-4 hover:underline pointer-events-none">Sin video seleccionado</a>
+                            <div class="flex flex-col gap-2 rounded-[1.5rem] bg-slate-950/80 p-5 text-sm text-orange-50">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs uppercase tracking-[0.4em] text-orange-200/80">Ahora sonando</span>
+                                    <span id="nowPlayingEq" class="eq" aria-hidden="true">
+                                        <span class="bar"></span>
+                                        <span class="bar"></span>
+                                        <span class="bar"></span>
+                                        <span class="bar"></span>
+                                    </span>
+                                </div>
+                                <div id="nowPlayingWrap" class="relative overflow-hidden">
+                                    <a id="nowPlaying" href="#" target="_blank" rel="noopener" class="block whitespace-nowrap text-lg font-semibold text-white/60 underline-offset-4 hover:underline pointer-events-none select-none">Sin video seleccionado</a>
+                                </div>
                                 <p class="text-xs text-orange-200/70">El video que elijas se compartira con toda la sala automaticamente.</p>
                             </div>
                         </div>
@@ -167,21 +226,27 @@
                 <span class="font-semibold uppercase tracking-[0.35em] text-orange-400">Panel flotante</span>
                 <span class="text-[0.7rem] text-slate-400">Controla todo sin perder el foco</span>
             </div>
-            <div class="flex items-center justify-center gap-4">
-
-                <button id="barPlayBtn" class="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-[#ff7a1a] to-[#ff4d00] text-white shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:scale-110 focus:outline-none focus:ring-2 focus:ring-orange-200 active:scale-95 animate-pulse-slow" aria-label="Reproducir">
-                    <svg class="h-5 w-5 transition-transform duration-300" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="m3.612.21 9.75 6.006a1 1 0 0 1 0 1.708l-9.75 6.006A1 1 0 0 1 2 13.006V1.003A1 1 0 0 1 3.612.21Z"/></svg>
-                </button>
-                <button id="barPauseBtn" class="hidden flex h-12 w-12 items-center justify-center rounded-full border border-orange-200/70 bg-white text-orange-500 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-orange-400 hover:text-orange-600 hover:shadow-lg hover:scale-110 focus:outline-none focus:ring-2 focus:ring-orange-200 active:scale-95" aria-label="Pausar">
-                    <svg class="h-5 w-5 transition-transform duration-300" viewBox="0 0 12 16" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M1.5 0A1.5 1.5 0 0 0 0 1.5v13a1.5 1.5 0 0 0 1.5 1.5h1A1.5 1.5 0 0 0 4 14.5v-13A1.5 1.5 0 0 0 2.5 0h-1Zm7 0A1.5 1.5 0 0 0 7 1.5v13A1.5 1.5 0 0 0 8.5 16h1A1.5 1.5 0 0 0 11 14.5v-13A1.5 1.5 0 0 0 9.5 0h-1Z"/></svg>
-                </button>
-
-                <button id="barRestartBtn" class="flex h-12 w-12 items-center justify-center rounded-full border border-orange-200/70 bg-white text-orange-500 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-orange-400 hover:text-orange-600 hover:shadow-lg hover:scale-110 hover:rotate-180 focus:outline-none focus:ring-2 focus:ring-orange-200 active:scale-95" aria-label="Reiniciar">
-                    <svg class="h-5 w-5 transition-transform duration-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M15.312 11.424a5.5 5.5 0 01-9.201 2.466l-.312-.311h2.433a.75.75 0 000-1.5H3.989a.75.75 0 00-.75.75v4.242a.75.75 0 001.5 0v-2.43l.31.31a7 7 0 0011.712-3.138.75.75 0 00-1.449-.39zm-3.068-9.93a7 7 0 00-11.412 3.14.75.75 0 101.449.39 5.5 5.5 0 019.201-2.466l.312.311h-2.433a.75.75 0 000 1.5h4.243a.75.75 0 00.75-.75V3.377a.75.75 0 00-1.5 0v2.43l-.31-.31z" clip-rule="evenodd"/></svg>
-                </button>
-                <button id="barNextBtn" class="flex h-12 w-12 items-center justify-center rounded-full border border-orange-200/70 bg-white text-orange-500 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-orange-400 hover:text-orange-600 hover:shadow-lg hover:scale-110 focus:outline-none focus:ring-2 focus:ring-orange-200 active:scale-95" aria-label="Siguiente">
-                    <svg class="h-5 w-5 transition-transform duration-300" viewBox="0 0 12 16" fill="currentColor" aria-hidden="true"><path d="M11 0a1 1 0 0 0-1 1v5.7a2.028 2.028 0 0 0-.177-.194L3.33.732A2 2 0 0 0 0 2.227v11.546A1.977 1.977 0 0 0 1.181 15.6a1.982 1.982 0 0 0 2.147-.33l6.5-5.773A1.88 1.88 0 0 0 10 9.3V15a1 1 0 1 0 2 0V1a1 1 0 0 0-1-1Z"/></svg>
-                </button>
+            <div class="grid grid-cols-3 items-center gap-4">
+                <div class="flex justify-start">
+                    <button id="barRestartBtn" class="flex h-12 w-12 items-center justify-center rounded-full border border-orange-200/70 bg-white text-orange-500 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-orange-400 hover:text-orange-600 hover:shadow-lg hover:scale-110 hover:rotate-180 focus:outline-none focus:ring-2 focus:ring-orange-200 active:scale-95" aria-label="Reiniciar">
+                        <i class="fa-solid fa-recycle text-orange-500 text-[18px]"></i>
+                    </button>
+                </div>
+                <div class="flex justify-center">
+                    <div class="relative h-12 w-12">
+                        <button id="barPlayBtn" class="absolute inset-0 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-[#ff7a1a] to-[#ff4d00] text-white shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:scale-110 focus:outline-none focus:ring-2 focus:ring-orange-200 active:scale-95 animate-pulse-slow" aria-label="Reproducir">
+                            <svg class="h-5 w-5 transition-transform duration-300" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="m3.612.21 9.75 6.006a1 1 0 0 1 0 1.708l-9.75 6.006A1 1 0 0 1 2 13.006V1.003A1 1 0 0 1 3.612.21Z"/></svg>
+                        </button>
+                        <button id="barPauseBtn" class="hidden absolute inset-0 flex h-12 w-12 items-center justify-center rounded-full border border-orange-200/70 bg-white text-orange-500 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-orange-400 hover:text-orange-600 hover:shadow-lg hover:scale-110 focus:outline-none focus:ring-2 focus:ring-orange-200 active:scale-95" aria-label="Pausar">
+                            <svg class="h-5 w-5 transition-transform duration-300" viewBox="0 0 12 16" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M1.5 0A1.5 1.5 0 0 0 0 1.5v13a1.5 1.5 0 0 0 1.5 1.5h1A1.5 1.5 0 0 0 4 14.5v-13A1.5 1.5 0 0 0 2.5 0h-1Zm7 0A1.5 1.5 0 0 0 7 1.5v13A1.5 1.5 0 0 0 8.5 16h1A1.5 1.5 0 0 0 11 14.5v-13A1.5 1.5 0 0 0 9.5 0h-1Z"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex justify-end">
+                    <button id="barNextBtn" class="flex h-12 w-12 items-center justify-center rounded-full border border-orange-200/70 bg-white text-orange-500 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-orange-400 hover:text-orange-600 hover:shadow-lg hover:scale-110 focus:outline-none focus:ring-2 focus:ring-orange-200 active:scale-95" aria-label="Siguiente">
+                        <svg class="h-5 w-5 transition-transform duration-300" viewBox="0 0 12 16" fill="currentColor" aria-hidden="true"><path d="M11 0a1 1 0 0 0-1 1v5.7a2.028 2.028 0 0 0-.177-.194L3.33.732A2 2 0 0 0 0 2.227v11.546A1.977 1.977 0 0 0 1.181 15.6a1.982 1.982 0 0 0 2.147-.33l6.5-5.773A1.88 1.88 0 0 0 10 9.3V15a1 1 0 1 0 2 0V1a1 1 0 0 0-1-1Z"/></svg>
+                    </button>
+                </div>
             </div>
             <div class="flex items-center gap-3">
                 <span id="barCurrentTime" class="w-12 text-center text-xs font-semibold text-slate-500">0:00</span>

@@ -10,6 +10,11 @@ let playerReady = false;
 let pendingSync = null;
 const manualTitleInput = document.getElementById('vid1Title');
 const videoIdInput = document.getElementById('vid1');
+const nowPlayingEl = document.getElementById('nowPlaying');
+const nowPlayingEq = document.getElementById('nowPlayingEq');
+const nowPlayingWrap = document.getElementById('nowPlayingWrap');
+let currentVideoId = '';
+let tickerTimer = null;
 
 const queueManager = window.queueManager;
 if (!queueManager) {
@@ -27,13 +32,36 @@ const {
   clearCurrentQueueItem
 } = queueManager;
 
+// Cache simple de items de cola para buscar título por videoId
+const queueCache = {
+  items: [],
+  updateFrom(items) { this.items = Array.isArray(items) ? items : []; },
+  findByVideoId(id) {
+    return (this.items || []).find(x => x && x.videoId === id);
+  }
+};
+
 // --- SignalR ---
 const connection = new signalR.HubConnectionBuilder()
   .withUrl("/radioHub")
   .withAutomaticReconnect()
   .build();
 
-connection.start().catch(err => console.error(err.toString()));
+connection.start()
+  .then(async () => {
+    setConnectionBadge('Conectado', true);
+    requestUserCount();
+    // Reintento breve por si el hub aún no responde
+    setTimeout(() => requestUserCount(), 800);
+    // Si aún no llega nada en ~2s, establece al menos "1 conectado"
+    setTimeout(() => {
+      const text = document.getElementById('connectionText');
+      if (text && !(text.textContent || '').match(/\d/)) {
+        updateUserCount(1);
+      }
+    }, 2000);
+  })
+  .catch(err => console.error(err.toString()));
 fetchQueue();
 
 // Recibe eventos del hub
@@ -43,7 +71,9 @@ connection.on("SyncState", (id1, startTimestamp, percent, isPlaying, queueItemId
   isSyncing = true;
   playerReady = false;
   playerA.loadVideoById({videoId: id1, startSeconds: 0});
-  document.getElementById('vid1').value = id1;
+  if (videoIdInput) videoIdInput.value = id1;
+  currentVideoId = id1 || '';
+  updateNowPlayingTitle(id1).catch(() => {});
   // Espera a que el video estÃ© listo y lo posiciona
   const syncToState = () => {
     if (!playerA || typeof playerA.seekTo !== 'function') {
@@ -53,8 +83,10 @@ connection.on("SyncState", (id1, startTimestamp, percent, isPlaying, queueItemId
     setPercent(percent).then(() => {
       if (isPlaying) {
         playerA.playVideo();
+        toggleEq(true);
       } else {
         playerA.pauseVideo();
+        toggleEq(false);
       }
       isSyncing = false;
     });
@@ -65,12 +97,14 @@ connection.on("Play", () => {
   isSyncing = true;
   playerA && playerA.playVideo();
   if (window.setBarState) window.setBarState(true);
+  toggleEq(true);
   setTimeout(() => { isSyncing = false; }, 300);
 });
 connection.on("Pause", () => {
   isSyncing = true;
   playerA && playerA.pauseVideo();
   if (window.setBarState) window.setBarState(false);
+  toggleEq(false);
   setTimeout(() => { isSyncing = false; }, 300);
 });
 connection.on("SeekPercent", (percent) => {
@@ -84,7 +118,9 @@ connection.on("LoadVideos", (id1, startTimestamp, queueItemId) => {
   setCurrentQueueItemId(queueItemId || null);
   playerReady = false;
   playerA.loadVideoById({videoId: id1, startSeconds: 0});
-  document.getElementById('vid1').value = id1;
+  if (videoIdInput) videoIdInput.value = id1;
+  currentVideoId = id1 || '';
+  updateNowPlayingTitle(id1).catch(() => {});
   // Guarda la sincronizaciÃ³n pendiente
   pendingSync = { id1, startTimestamp };
   tryStartSync();
@@ -92,6 +128,60 @@ connection.on("LoadVideos", (id1, startTimestamp, queueItemId) => {
 connection.on("UpdateQueue", () => {
     window.queueManager.fetchQueue();
 });
+
+// --- Conteo de usuarios ---
+connection.on('UserCount', (count) => {
+  updateUserCount(count);
+});
+
+function updateUserCount(count) {
+  const badge = document.getElementById('connectionStatus');
+  if (!badge) return;
+  const text = document.getElementById('connectionText');
+  if (text) {
+    const n = Number(count) || 0;
+    text.textContent = n === 1 ? '1 conectado' : `${n} conectados`;
+  }
+}
+
+function setConnectionBadge(label, isOk) {
+  const badge = document.getElementById('connectionStatus');
+  if (!badge) return;
+  const dot = document.getElementById('connectionDot');
+  const text = document.getElementById('connectionText');
+  if (dot) dot.style.color = isOk ? '#10b981' : '#f97316';
+  if (text) {
+    const current = (text.textContent || '').trim();
+    // Si ya hay un número visible, no lo sobreescribas con "Conectado"
+    if (!(isOk && /\d/.test(current))) {
+      text.textContent = label;
+    }
+  }
+}
+
+connection.onreconnecting(() => setConnectionBadge('Reconectando…', false));
+connection.onreconnected(async () => {
+  setConnectionBadge('Conectado', true);
+  requestUserCount();
+});
+connection.onclose(() => setConnectionBadge('Desconectado', false));
+
+// Establecer estado inicial visual mientras arranca
+setConnectionBadge('Conectando…', false);
+
+// Petición periódica del conteo para asegurar consistencia
+function requestUserCount() {
+  try {
+    connection.invoke('GetUserCount').then(updateUserCount).catch(() => {});
+  } catch {}
+}
+setInterval(() => {
+  try {
+    if (connection && connection.state === signalR.HubConnectionState.Connected) {
+      requestUserCount();
+    }
+  } catch {}
+}, 5000);
 
 function tryStartSync() {
   if (!pendingSync) return;
@@ -121,6 +211,8 @@ window.onYouTubeIframeAPIReady = function () {
     events: {
       'onReady': () => {
         playerReady = true;
+        // Intenta deducir el ID del video actual y actualizar el título
+        ensureNowPlayingFromPlayer();
         tryStartSync(); // Intenta iniciar la sincronizaciÃ³n si hay una pendiente
       },
       'onStateChange': onStateChangeA
@@ -130,6 +222,8 @@ window.onYouTubeIframeAPIReady = function () {
 
 // --- SincronizaciÃ³n bÃ¡sica local + global ---
 function onStateChangeA(e) {
+  // Incluso si viene de sincronización, intenta refrescar el título desde el player
+  ensureNowPlayingFromPlayer();
   if (isSyncing) return;
   handleGlobalSync(e, playerA);
 }
@@ -229,6 +323,8 @@ async function selectVideo(video) {
       channelTitle: video.channelTitle ?? null,
       thumbnailUrl: video.thumbnail ?? null
     });
+    // Refrescar cache de cola tras agregar
+    try { const res = await fetch('/api/music/queue'); queueCache.updateFrom(await res.json()); } catch {}
   } catch (error) {
     console.error('No se pudo guardar la canción en la cola', error);
     const message = error instanceof Error ? error.message : '';
@@ -344,6 +440,100 @@ barProgress.addEventListener('input', (e) => {
     document.getElementById('barCurrentTime').textContent = formatTime(val);
   }
 });
+
+// --- NOW PLAYING: actualización de título y efectos ---
+function toggleEq(isPlaying) {
+  if (!nowPlayingEq) return;
+  if (isPlaying) nowPlayingEq.classList.add('playing');
+  else nowPlayingEq.classList.remove('playing');
+}
+
+async function updateNowPlayingTitle(videoId) {
+  if (!nowPlayingEl) return;
+  const fallback = 'Sin video seleccionado';
+  try {
+    // Primero intenta por cache local de cola
+    if (!queueCache.items.length && Array.isArray(window.__queueItems)) {
+      queueCache.updateFrom(window.__queueItems);
+    }
+    if (!queueCache.items.length) {
+      try { const res = await fetch('/api/music/queue'); queueCache.updateFrom(await res.json()); } catch {}
+    }
+    const fromQueue = queueCache.findByVideoId(videoId);
+    let title = fromQueue?.title;
+    let url = videoId ? `https://www.youtube.com/watch?v=${videoId}` : '#';
+
+    // Si no hay, usa oEmbed (sin clave) como respaldo
+    if (!title && videoId) {
+      // Mostrar estado de carga inmediato
+      nowPlayingEl.textContent = 'Cargando título…';
+      try {
+        const o = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`).then(r => r.ok ? r.json() : null);
+        title = o?.title;
+      } catch {}
+    }
+
+    nowPlayingEl.href = url;
+    nowPlayingEl.textContent = title || (videoId ? `Video actual: ${videoId}` : fallback);
+
+    // Aplicar efecto shimmer y ticker si es largo
+    nowPlayingEl.classList.remove('text-shimmer');
+    void nowPlayingEl.offsetWidth; // reflow para reiniciar animación
+    nowPlayingEl.classList.add('text-shimmer');
+    startTicker();
+  } catch {
+    nowPlayingEl.textContent = fallback;
+  }
+}
+
+function startTicker() {
+  if (!nowPlayingEl || !nowPlayingWrap) return;
+  clearInterval(tickerTimer);
+  // Reset estilos
+  nowPlayingEl.style.transform = 'translateX(0)';
+  nowPlayingEl.style.willChange = 'transform';
+  nowPlayingEl.style.transition = 'none';
+
+  const wrapWidth = nowPlayingWrap.clientWidth;
+  const textWidth = nowPlayingEl.scrollWidth;
+  if (textWidth <= wrapWidth) return; // no hace falta ticker
+
+  const distance = textWidth + 24; // px a desplazar + espacio
+  const duration = Math.min(30, Math.max(12, distance / 16)); // s
+
+  let x = 0;
+  tickerTimer = setInterval(() => {
+    x -= 1;
+    if (Math.abs(x) > distance) x = wrapWidth;
+    nowPlayingEl.style.transform = `translateX(${x}px)`;
+  }, (duration * 1000) / (distance + wrapWidth));
+}
+
+function getVideoIdFromPlayer() {
+  try {
+    if (playerA && typeof playerA.getVideoData === 'function') {
+      const data = playerA.getVideoData();
+      if (data && data.video_id) return data.video_id;
+    }
+  } catch {}
+  return currentVideoId;
+}
+
+function ensureNowPlayingFromPlayer() {
+  const vid = getVideoIdFromPlayer();
+  if (vid && vid !== currentVideoId) {
+    currentVideoId = vid;
+    updateNowPlayingTitle(vid).catch(() => {});
+  }
+}
+
+// Exponer por si otros módulos quieren actualizar manualmente
+window.updateNowPlayingTitle = updateNowPlayingTitle;
+
+// Reconciliación periódica por si se pierde un evento
+setInterval(() => {
+  try { ensureNowPlayingFromPlayer(); } catch {}
+}, 2000);
 
 window.radioApp = {
   connection,
