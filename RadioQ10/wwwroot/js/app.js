@@ -92,6 +92,11 @@ connection.on("LoadVideos", (id1, startTimestamp, queueItemId) => {
 connection.on("UpdateQueue", () => {
     window.queueManager.fetchQueue();
 });
+connection.on("UserListUpdate", () => {
+    console.log("Arribando");
+    window.userManager.fetchUsers();
+});
+
 
 function tryStartSync() {
   if (!pendingSync) return;

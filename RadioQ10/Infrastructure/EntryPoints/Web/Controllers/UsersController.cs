@@ -2,6 +2,7 @@ using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using RadioQ10.Application.Interfaces;
 using RadioQ10.Domain.Entities;
+using RadioQ10.Infrastructure.EntryPoints.SignalR;
 
 namespace RadioQ10.Infrastructure.EntryPoints.Web.Controllers;
 
@@ -41,5 +42,12 @@ public sealed class UsersController : ControllerBase
         }
 
         return Ok(new UserDto(user.Id, user.Name));
+    }
+
+
+    [HttpGet("actuals")]
+    public ActionResult Actuals()
+    {
+        return Ok(RadioHub.UsersActuals.Keys);
     }
 }
