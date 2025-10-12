@@ -55,5 +55,6 @@ app.UseStaticFiles();
 app.MapControllers();
 
 app.MapHub<RadioHub>("/radioHub");
+app.MapFallbackToFile("/index.html");
 
 app.Run();
